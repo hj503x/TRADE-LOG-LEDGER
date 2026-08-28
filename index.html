@@ -53,9 +53,13 @@
     display:flex;
     gap:0;
     border:1px solid var(--line);
-    margin-bottom:16px;
+    margin-bottom:8px;
     overflow:hidden;
     border-radius:2px;
+    position:sticky;
+    top:0;
+    z-index:20;
+    background:var(--bg);
   }
   .stat{
     flex:1;
@@ -66,6 +70,18 @@
   .stat .n{font-size:17px;font-weight:600;color:var(--ink);}
   .stat .l{font-size:9px;color:var(--dim);letter-spacing:0.12em;text-transform:uppercase;margin-top:2px;}
   .stat.hitcolor .n{color:var(--hit);}
+
+  .breakdown{
+    font-size:10px;
+    color:var(--dim);
+    margin:0 0 16px;
+    letter-spacing:0.02em;
+    display:flex;
+    flex-wrap:wrap;
+    gap:4px 12px;
+    padding:0 2px;
+  }
+  .breakdown b{color:var(--ink);font-weight:600;}
 
   form{
     display:grid;
@@ -151,7 +167,12 @@
   .tag.short{color:#d8a98f;border-color:#785a3a;}
   .tag.hit{color:var(--hit);border-color:var(--hit);}
   .tag.miss{color:var(--miss);border-color:var(--miss);}
+  .tag.pending{color:var(--dim);border-color:var(--dim);}
+  .tag.result-tag{cursor:pointer;}
+  .tag.result-tag:hover{opacity:0.75;}
   .rr{color:var(--accent);}
+  .rr-edit{cursor:pointer;}
+  .rr-edit:hover{opacity:0.75;}
   .del{
     background:none;
     border:none;
@@ -159,6 +180,22 @@
     font-size:13px;
   }
   .del:hover{color:var(--miss);}
+  .edit{
+    background:none;
+    border:none;
+    color:var(--dim);
+    font-size:13px;
+    margin-right:4px;
+  }
+  .edit:hover{color:var(--accent);}
+  .dup{
+    background:none;
+    border:none;
+    color:var(--dim);
+    font-size:13px;
+    margin-right:4px;
+  }
+  .dup:hover{color:#8fb5d8;}
   .empty{
     text-align:center;
     color:var(--dim);
@@ -171,6 +208,7 @@
     display:flex;
     gap:8px;
     margin-top:18px;
+    flex-wrap:wrap;
   }
   .actions button{
     background:transparent;
@@ -180,6 +218,72 @@
   }
   .actions button:hover{color:var(--ink);border-color:var(--dim);}
 
+  .toolbar{
+    display:flex;
+    gap:8px;
+    margin-bottom:12px;
+    flex-wrap:wrap;
+  }
+  .toolbar input, .toolbar select{
+    background:var(--panel);
+    border:1px solid var(--line);
+    color:var(--ink);
+    font-family:var(--mono);
+    font-size:11px;
+    padding:7px 10px;
+    border-radius:2px;
+    outline:none;
+  }
+  .toolbar input{flex:1;min-width:120px;}
+  .toolbar input:focus, .toolbar select:focus{border-color:var(--accent);}
+
+  .month-row td{
+    background:var(--panel);
+    color:var(--accent);
+    font-size:10px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    padding:8px 8px;
+    border-bottom:1px solid var(--line);
+    font-weight:600;
+  }
+  .month-row .mstats{
+    color:var(--dim);
+    font-weight:400;
+    letter-spacing:0.02em;
+    text-transform:none;
+    float:right;
+  }
+
+  .toast{
+    position:fixed;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%);
+    background:var(--panel);
+    border:1px solid var(--line);
+    color:var(--ink);
+    padding:10px 16px;
+    border-radius:4px;
+    font-size:12px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    z-index:50;
+    box-shadow:0 4px 16px rgba(0,0,0,0.4);
+  }
+  .toast button{
+    background:none;
+    border:none;
+    color:var(--accent);
+    font-weight:700;
+    cursor:pointer;
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+  }
+
   @media (max-width: 640px){
     form{grid-template-columns: 1fr 1fr;}
     table{display:block;overflow-x:auto;}
@@ -187,13 +291,15 @@
 
   @media print{
     body{background:#fff;color:#000;padding:0;}
-    form,.actions,.stats{display:none;}
+    form,.actions,.stats,.toolbar,#editBar,.breakdown,.toast{display:none;}
     header{border-color:#000;}
     header h1, header h1 span{color:#000;}
     thead th{color:#000;border-color:#000;}
     tbody td{border-color:#ccc;}
     .tag{border-color:#000 !important;color:#000 !important;}
     .rr{color:#000;}
+    .month-row td{background:#eee;color:#000;}
+    .dup, .edit, .del{display:none;}
   }
 </style>
 </head>
@@ -210,6 +316,7 @@
     <div class="stat hitcolor"><div class="n" id="statHitRate">—</div><div class="l">Hit Rate</div></div>
     <div class="stat"><div class="n" id="statAvgRR">—</div><div class="l">Avg R:R</div></div>
   </div>
+  <div class="breakdown" id="breakdown"></div>
 
   <form id="tradeForm">
     <div>
@@ -234,16 +341,29 @@
     <div>
       <label>Result</label>
       <select id="fResult">
+        <option value="pending" selected>Pending</option>
         <option value="hit">Hit</option>
         <option value="miss">Miss</option>
       </select>
     </div>
     <div>
       <label>R:R</label>
-      <input type="text" id="fRR" placeholder="1:2" required autocomplete="off">
+      <input type="text" id="fRR" placeholder="1:2" autocomplete="off">
     </div>
-    <button type="submit" class="addbtn">+ Add</button>
+    <button type="submit" class="addbtn" id="submitBtn">+ Add</button>
   </form>
+  <div id="editBar" style="display:none;margin:-10px 0 18px;">
+    <button id="btnCancelEdit" style="background:transparent;border:1px solid var(--line);color:var(--dim);padding:6px 12px;font-family:var(--mono);font-size:11px;border-radius:2px;cursor:pointer;">Cancel edit</button>
+  </div>
+
+  <div class="toolbar">
+    <input type="text" id="searchBox" placeholder="Search asset...">
+    <select id="sortSelect">
+      <option value="newest">Newest first</option>
+      <option value="oldest">Oldest first</option>
+      <option value="asset">Asset A–Z</option>
+    </select>
+  </div>
 
   <table>
     <thead>
@@ -264,14 +384,19 @@
   <div class="actions">
     <button id="btnPrint">Print / Save PDF</button>
     <button id="btnCSV">Export CSV</button>
+    <button id="btnJSONExport">Backup JSON</button>
+    <button id="btnJSONImport">Restore JSON</button>
     <button id="btnClear">Clear All</button>
   </div>
+  <input type="file" id="fileImport" accept="application/json" style="display:none;">
 
 </div>
+<div id="toast" class="toast" style="display:none;"></div>
 
 <script>
 const STORAGE_KEY = 'ledger_trades_v1';
 let trades = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+let editingId = null;
 
 const tbody = document.getElementById('tbody');
 const emptyMsg = document.getElementById('emptyMsg');
@@ -281,6 +406,8 @@ const fDate = document.getElementById('fDate');
 const fDir = document.getElementById('fDir');
 const fResult = document.getElementById('fResult');
 const fRR = document.getElementById('fRR');
+const searchBox = document.getElementById('searchBox');
+const sortSelect = document.getElementById('sortSelect');
 
 document.getElementById('dateNow').textContent = new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'});
 fDate.valueAsDate = new Date();
@@ -293,28 +420,129 @@ function nextSerial(){
   return trades.length ? trades[trades.length-1].serial + 1 : 1;
 }
 
+function monthKey(dateStr){
+  const dt = new Date(dateStr + 'T00:00:00');
+  if(isNaN(dt)) return 'unknown';
+  return dt.toLocaleDateString('en-GB', {month:'long', year:'numeric'});
+}
+
+function computeGroupStats(list){
+  const resolved = list.filter(t=>t.result==='hit' || t.result==='miss');
+  const hits = list.filter(t=>t.result==='hit').length;
+  const hitRate = resolved.length ? Math.round((hits/resolved.length)*100) + '%' : '—';
+  const rrVals = resolved.map(t=>parseRR(t.rr)).filter(v=>v!==null);
+  const avgRR = rrVals.length ? '1:' + (rrVals.reduce((a,b)=>a+b,0)/rrVals.length).toFixed(1) : '—';
+  return `${list.length} trades · ${hitRate} hit · ${avgRR} avg`;
+}
+
 function render(){
-  fSerial.value = nextSerial();
+  if(editingId === null){
+    fSerial.value = nextSerial();
+  }
   tbody.innerHTML = '';
+
+  const query = searchBox.value.trim().toUpperCase();
+  const sortMode = sortSelect.value;
+
+  let filtered = trades.filter(t => !query || t.asset.includes(query));
+
   if(trades.length === 0){
     emptyMsg.style.display = 'block';
+    updateStats();
+    return;
+  }
+  if(filtered.length === 0){
+    emptyMsg.style.display = 'block';
+    emptyMsg.textContent = 'No trades match your search.';
+    updateStats();
+    return;
+  }
+  emptyMsg.style.display = 'none';
+  emptyMsg.textContent = 'No entries yet — log your first trade above.';
+
+  // sort within groups
+  let sorted = [...filtered];
+  if(sortMode === 'newest'){
+    sorted.sort((a,b)=> b.date.localeCompare(a.date) || b.serial - a.serial);
+  } else if(sortMode === 'oldest'){
+    sorted.sort((a,b)=> a.date.localeCompare(b.date) || a.serial - b.serial);
+  } else if(sortMode === 'asset'){
+    sorted.sort((a,b)=> a.asset.localeCompare(b.asset));
+  }
+
+  // group by month (skip grouping entirely if sorting by asset — grouping only makes sense chronologically)
+  if(sortMode === 'asset'){
+    sorted.forEach(t => tbody.appendChild(rowEl(t)));
   } else {
-    emptyMsg.style.display = 'none';
-    trades.forEach(t=>{
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="num">${String(t.serial).padStart(3,'0')}</td>
-        <td>${escapeHtml(t.asset)}</td>
-        <td class="num">${formatDate(t.date)}</td>
-        <td><span class="tag ${t.dir}">${t.dir}</span></td>
-        <td><span class="tag ${t.result}">${t.result}</span></td>
-        <td class="rr">${escapeHtml(t.rr)}</td>
-        <td><button class="del" data-id="${t.id}" title="Delete">✕</button></td>
-      `;
-      tbody.appendChild(tr);
+    const groups = new Map();
+    sorted.forEach(t=>{
+      const key = monthKey(t.date);
+      if(!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(t);
+    });
+    groups.forEach((list, key)=>{
+      const mrow = document.createElement('tr');
+      mrow.className = 'month-row';
+      mrow.innerHTML = `<td colspan="7">${key} <span class="mstats">${computeGroupStats(list)}</span></td>`;
+      tbody.appendChild(mrow);
+      list.forEach(t => tbody.appendChild(rowEl(t)));
     });
   }
+
   updateStats();
+}
+
+function rowEl(t){
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td class="num">${String(t.serial).padStart(3,'0')}</td>
+    <td>${escapeHtml(t.asset)}</td>
+    <td class="num">${formatDate(t.date)}</td>
+    <td><span class="tag ${t.dir}">${t.dir}</span></td>
+    <td><span class="tag ${t.result} result-tag" data-id="${t.id}" title="Tap to update">${t.result}</span></td>
+    <td class="rr rr-edit" data-id="${t.id}" title="Tap to set R:R">${t.rr ? escapeHtml(t.rr) : '—'}</td>
+    <td>
+      <button class="dup" data-id="${t.id}" title="Duplicate">⧉</button>
+      <button class="edit" data-id="${t.id}" title="Edit">✎</button>
+      <button class="del" data-id="${t.id}" title="Delete">✕</button>
+    </td>
+  `;
+  return tr;
+}
+
+function updateBreakdown(){
+  const el = document.getElementById('breakdown');
+  if(trades.length === 0){ el.innerHTML = ''; return; }
+
+  const longs = trades.filter(t=>t.dir==='long' && (t.result==='hit'||t.result==='miss'));
+  const shorts = trades.filter(t=>t.dir==='short' && (t.result==='hit'||t.result==='miss'));
+  const longRate = longs.length ? Math.round(longs.filter(t=>t.result==='hit').length/longs.length*100)+'%' : '—';
+  const shortRate = shorts.length ? Math.round(shorts.filter(t=>t.result==='hit').length/shorts.length*100)+'%' : '—';
+
+  const assetMap = new Map();
+  trades.forEach(t=>{
+    if(!assetMap.has(t.asset)) assetMap.set(t.asset, {total:0, hits:0, resolved:0});
+    const a = assetMap.get(t.asset);
+    a.total++;
+    if(t.result==='hit'||t.result==='miss'){
+      a.resolved++;
+      if(t.result==='hit') a.hits++;
+    }
+  });
+  let mostTraded = null, mostCount = 0;
+  let bestAsset = null, bestRate = -1;
+  assetMap.forEach((v,k)=>{
+    if(v.total > mostCount){ mostCount = v.total; mostTraded = k; }
+    if(v.resolved >= 3){
+      const rate = v.hits / v.resolved;
+      if(rate > bestRate){ bestRate = rate; bestAsset = k; }
+    }
+  });
+
+  let html = `Long <b>${longRate}</b> · Short <b>${shortRate}</b>`;
+  if(mostTraded) html += ` · Most traded <b>${escapeHtml(mostTraded)}</b> (${mostCount})`;
+  if(bestAsset) html += ` · Best asset <b>${escapeHtml(bestAsset)}</b> (${Math.round(bestRate*100)}%)`;
+  el.innerHTML = html;
 }
 
 function updateStats(){
@@ -323,18 +551,23 @@ function updateStats(){
   if(total === 0){
     document.getElementById('statHitRate').textContent = '—';
     document.getElementById('statAvgRR').textContent = '—';
+    updateBreakdown();
     return;
   }
+  const resolved = trades.filter(t=>t.result==='hit' || t.result==='miss');
   const hits = trades.filter(t=>t.result==='hit').length;
-  document.getElementById('statHitRate').textContent = Math.round((hits/total)*100) + '%';
+  document.getElementById('statHitRate').textContent = resolved.length
+    ? Math.round((hits/resolved.length)*100) + '%'
+    : '—';
 
-  const rrVals = trades.map(t=>parseRR(t.rr)).filter(v=>v!==null);
+  const rrVals = resolved.map(t=>parseRR(t.rr)).filter(v=>v!==null);
   if(rrVals.length){
     const avg = rrVals.reduce((a,b)=>a+b,0)/rrVals.length;
     document.getElementById('statAvgRR').textContent = '1:' + avg.toFixed(1);
   } else {
     document.getElementById('statAvgRR').textContent = '—';
   }
+  updateBreakdown();
 }
 
 function parseRR(rr){
@@ -355,34 +588,138 @@ function escapeHtml(s){
 
 document.getElementById('tradeForm').addEventListener('submit', function(e){
   e.preventDefault();
-  trades.push({
-    id: Date.now(),
-    serial: nextSerial(),
+  const data = {
     asset: fAsset.value.trim().toUpperCase(),
     date: fDate.value,
     dir: fDir.value,
     result: fResult.value,
     rr: fRR.value.trim()
-  });
+  };
+  if(editingId !== null){
+    const t = trades.find(tr=>tr.id === editingId);
+    if(t) Object.assign(t, data);
+    exitEditMode();
+  } else {
+    trades.push({ id: Date.now(), serial: nextSerial(), ...data });
+  }
   save();
   fAsset.value = '';
   fRR.value = '';
+  fDate.valueAsDate = new Date();
+  fDir.value = 'long';
+  fResult.value = 'pending';
   fAsset.focus();
   render();
 });
 
+function enterEditMode(id){
+  if(editingId !== null && editingId !== id){
+    if(!confirm('You have an unsaved edit in progress. Discard it and edit this trade instead?')) return;
+  }
+  const t = trades.find(tr=>tr.id === id);
+  if(!t) return;
+  editingId = id;
+  fAsset.value = t.asset;
+  fDate.value = t.date;
+  fDir.value = t.dir;
+  fResult.value = t.result;
+  fRR.value = t.rr || '';
+  fSerial.value = String(t.serial).padStart(3,'0');
+  document.getElementById('submitBtn').textContent = '✓ Update';
+  document.getElementById('editBar').style.display = 'block';
+  window.scrollTo({top:0, behavior:'smooth'});
+  fAsset.focus();
+}
+
+function exitEditMode(){
+  editingId = null;
+  document.getElementById('submitBtn').textContent = '+ Add';
+  document.getElementById('editBar').style.display = 'none';
+}
+
+document.getElementById('btnCancelEdit').addEventListener('click', ()=>{
+  exitEditMode();
+  fAsset.value = '';
+  fRR.value = '';
+  fDate.valueAsDate = new Date();
+  fDir.value = 'long';
+  fResult.value = 'pending';
+  render();
+});
+
 tbody.addEventListener('click', function(e){
+  if(e.target.classList.contains('dup')){
+    const id = Number(e.target.dataset.id);
+    const t = trades.find(tr=>tr.id === id);
+    if(t){
+      fAsset.value = t.asset;
+      fDir.value = t.dir;
+      fRR.value = t.rr || '';
+      fDate.valueAsDate = new Date();
+      fResult.value = 'pending';
+      window.scrollTo({top:0, behavior:'smooth'});
+      fDate.focus();
+    }
+    return;
+  }
+  if(e.target.classList.contains('edit')){
+    enterEditMode(Number(e.target.dataset.id));
+    return;
+  }
   if(e.target.classList.contains('del')){
     const id = Number(e.target.dataset.id);
+    if(id === editingId) exitEditMode();
+    const idx = trades.findIndex(t=>t.id === id);
+    if(idx === -1) return;
+    const deleted = trades[idx];
     trades = trades.filter(t=>t.id !== id);
-    // renumber serials
     trades.forEach((t,i)=>t.serial = i+1);
     save();
     render();
+    showUndoToast(deleted, idx);
+  }
+  if(e.target.classList.contains('result-tag')){
+    const id = Number(e.target.dataset.id);
+    const t = trades.find(tr=>tr.id === id);
+    if(t){
+      const cycle = {pending:'hit', hit:'miss', miss:'pending'};
+      t.result = cycle[t.result];
+      save();
+      render();
+    }
+  }
+  if(e.target.classList.contains('rr-edit')){
+    const id = Number(e.target.dataset.id);
+    const t = trades.find(tr=>tr.id === id);
+    if(t){
+      const val = prompt('Set risk:reward (e.g. 1:2)', t.rr || '');
+      if(val !== null){
+        t.rr = val.trim();
+        save();
+        render();
+      }
+    }
   }
 });
 
 document.getElementById('btnPrint').addEventListener('click', ()=>window.print());
+
+let toastTimer = null;
+function showUndoToast(deletedTrade, deletedIndex){
+  const toast = document.getElementById('toast');
+  toast.innerHTML = 'Trade deleted <button id="undoBtn">Undo</button>';
+  toast.style.display = 'flex';
+  clearTimeout(toastTimer);
+  document.getElementById('undoBtn').onclick = function(){
+    trades.splice(deletedIndex, 0, deletedTrade);
+    trades.forEach((t,i)=>t.serial = i+1);
+    save();
+    render();
+    toast.style.display = 'none';
+    clearTimeout(toastTimer);
+  };
+  toastTimer = setTimeout(()=>{ toast.style.display = 'none'; }, 3000);
+}
 
 document.getElementById('btnClear').addEventListener('click', ()=>{
   if(confirm('Clear all logged trades? This cannot be undone.')){
@@ -405,6 +742,73 @@ document.getElementById('btnCSV').addEventListener('click', ()=>{
   a.download = `trade-log-${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
+});
+
+searchBox.addEventListener('input', render);
+sortSelect.addEventListener('change', render);
+
+document.getElementById('btnJSONExport').addEventListener('click', ()=>{
+  if(trades.length === 0) return;
+  const blob = new Blob([JSON.stringify(trades, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `trade-log-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+const fileImport = document.getElementById('fileImport');
+document.getElementById('btnJSONImport').addEventListener('click', ()=>fileImport.click());
+
+fileImport.addEventListener('change', function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt){
+    try{
+      const imported = JSON.parse(evt.target.result);
+      if(!Array.isArray(imported)) throw new Error('Invalid format');
+      const mode = confirm('Click OK to MERGE with existing trades, or Cancel to REPLACE all existing trades with this backup.');
+      if(mode){
+        // merge: avoid id collisions
+        const existingIds = new Set(trades.map(t=>t.id));
+        imported.forEach(t=>{
+          if(existingIds.has(t.id)) t.id = Date.now() + Math.random();
+        });
+        trades = trades.concat(imported);
+      } else {
+        trades = imported;
+      }
+      // renumber serials by current array order
+      trades.forEach((t,i)=>t.serial = i+1);
+      save();
+      render();
+      alert(`Imported ${imported.length} trades.`);
+    } catch(err){
+      alert('Could not read this file — make sure it\'s a valid backup JSON.');
+    }
+    fileImport.value = '';
+  };
+  reader.readAsText(file);
+});
+
+const fieldOrder = [fAsset, fDate, fDir, fResult, fRR];
+fieldOrder.forEach((el, idx)=>{
+  el.addEventListener('keydown', function(e){
+    if(e.key === 'Enter'){
+      e.preventDefault();
+      const next = fieldOrder[idx+1];
+      if(next){
+        next.focus();
+        if(typeof next.select === 'function') next.select();
+      } else {
+        const form = document.getElementById('tradeForm');
+        if(form.requestSubmit) form.requestSubmit();
+        else document.getElementById('submitBtn').click();
+      }
+    }
+  });
 });
 
 render();
