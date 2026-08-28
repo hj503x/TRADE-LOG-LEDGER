@@ -167,6 +167,7 @@
   .tag.short{color:#d8a98f;border-color:#785a3a;}
   .tag.hit{color:var(--hit);border-color:var(--hit);}
   .tag.miss{color:var(--miss);border-color:var(--miss);}
+  .tag.breakeven{color:var(--accent);border-color:var(--accent);}
   .tag.pending{color:var(--dim);border-color:var(--dim);}
   .tag.result-tag{cursor:pointer;}
   .tag.result-tag:hover{opacity:0.75;}
@@ -344,6 +345,7 @@
         <option value="pending" selected>Pending</option>
         <option value="hit">Hit</option>
         <option value="miss">Miss</option>
+        <option value="breakeven">Break Even</option>
       </select>
     </div>
     <div>
@@ -427,10 +429,11 @@ function monthKey(dateStr){
 }
 
 function computeGroupStats(list){
-  const resolved = list.filter(t=>t.result==='hit' || t.result==='miss');
+  const winLoss = list.filter(t=>t.result==='hit' || t.result==='miss');
+  const nonPending = list.filter(t=>t.result!=='pending');
   const hits = list.filter(t=>t.result==='hit').length;
-  const hitRate = resolved.length ? Math.round((hits/resolved.length)*100) + '%' : '—';
-  const rrVals = resolved.map(t=>parseRR(t.rr)).filter(v=>v!==null);
+  const hitRate = winLoss.length ? Math.round((hits/winLoss.length)*100) + '%' : '—';
+  const rrVals = nonPending.map(t=>parseRR(t.rr)).filter(v=>v!==null);
   const avgRR = rrVals.length ? '1:' + (rrVals.reduce((a,b)=>a+b,0)/rrVals.length).toFixed(1) : '—';
   return `${list.length} trades · ${hitRate} hit · ${avgRR} avg`;
 }
@@ -555,12 +558,13 @@ function updateStats(){
     return;
   }
   const resolved = trades.filter(t=>t.result==='hit' || t.result==='miss');
+  const nonPending = trades.filter(t=>t.result!=='pending');
   const hits = trades.filter(t=>t.result==='hit').length;
   document.getElementById('statHitRate').textContent = resolved.length
     ? Math.round((hits/resolved.length)*100) + '%'
     : '—';
 
-  const rrVals = resolved.map(t=>parseRR(t.rr)).filter(v=>v!==null);
+  const rrVals = nonPending.map(t=>parseRR(t.rr)).filter(v=>v!==null);
   if(rrVals.length){
     const avg = rrVals.reduce((a,b)=>a+b,0)/rrVals.length;
     document.getElementById('statAvgRR').textContent = '1:' + avg.toFixed(1);
@@ -682,7 +686,7 @@ tbody.addEventListener('click', function(e){
     const id = Number(e.target.dataset.id);
     const t = trades.find(tr=>tr.id === id);
     if(t){
-      const cycle = {pending:'hit', hit:'miss', miss:'pending'};
+      const cycle = {pending:'hit', hit:'miss', miss:'breakeven', breakeven:'pending'};
       t.result = cycle[t.result];
       save();
       render();
