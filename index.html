@@ -285,6 +285,128 @@
     text-transform:uppercase;
   }
 
+  .report-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.6);
+    z-index:60;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    overflow-y:auto;
+    padding:24px 16px;
+  }
+  .report-panel{
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:3px;
+    max-width:640px;
+    width:100%;
+    padding:20px;
+  }
+  .report-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    border-bottom:1px solid var(--line);
+    padding-bottom:12px;
+    margin-bottom:14px;
+  }
+  .report-head h2{
+    font-size:14px;
+    letter-spacing:0.14em;
+    margin:0;
+    font-weight:600;
+  }
+  .report-head h2 span{color:var(--accent);}
+  .report-close{
+    background:none;
+    border:none;
+    color:var(--dim);
+    font-size:16px;
+  }
+  .report-close:hover{color:var(--ink);}
+  #reportPeriod{
+    margin-bottom:16px;
+    width:auto;
+    min-width:150px;
+  }
+  .r-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-bottom:16px;
+  }
+  .r-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:2px;
+    padding:12px;
+  }
+  .r-card .rn{font-size:19px;font-weight:600;}
+  .r-card .rl{font-size:9px;color:var(--dim);letter-spacing:0.1em;text-transform:uppercase;margin-top:3px;}
+  .r-section{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:2px;
+    padding:14px;
+    margin-bottom:14px;
+  }
+  .r-section-title{
+    font-size:10px;
+    color:var(--dim);
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    margin-bottom:12px;
+  }
+  .r-bar-row{margin-bottom:10px;}
+  .r-bar-row:last-child{margin-bottom:0;}
+  .r-bar-label{
+    display:flex;
+    justify-content:space-between;
+    font-size:12px;
+    margin-bottom:4px;
+  }
+  .r-bar-track{
+    height:6px;
+    background:var(--bg);
+    border-radius:3px;
+    overflow:hidden;
+  }
+  .r-bar-fill{height:100%;background:var(--hit);}
+  .r-months{
+    display:flex;
+    align-items:flex-end;
+    gap:8px;
+    height:80px;
+  }
+  .r-month-col{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+  }
+  .r-month-bar{
+    width:100%;
+    background:var(--line);
+    border-radius:2px 2px 0 0;
+    min-height:2px;
+  }
+  .r-month-lbl{font-size:9px;color:var(--dim);}
+  .r-asset-table{width:100%;font-size:12px;border-collapse:collapse;}
+  .r-asset-table td{padding:6px 0;border-bottom:1px solid var(--line);}
+  .r-asset-table tr:last-child td{border-bottom:none;}
+  .r-asset-table td.right{text-align:right;}
+  .report-actions{display:flex;gap:8px;}
+  .report-actions button{
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--dim);
+    padding:8px 14px;
+  }
+  .report-actions button:hover{color:var(--ink);border-color:var(--dim);}
+
   @media (max-width: 640px){
     form{grid-template-columns: 1fr 1fr;}
     table{display:block;overflow-x:auto;}
@@ -301,6 +423,32 @@
     .rr{color:#000;}
     .month-row td{background:#eee;color:#000;}
     .dup, .edit, .del{display:none;}
+
+    body:not(.pr-data) table{display:none;}
+    body:not(.pr-data) #emptyMsg{display:none;}
+
+    body:not(.pr-report) .report-overlay{display:none;}
+    body.pr-report .report-overlay{
+      position:static;
+      background:#fff;
+      padding:0;
+      display:block;
+      margin-top:20px;
+    }
+    body.pr-report .report-panel{
+      max-width:none;
+      border:none;
+      padding:0;
+    }
+    body.pr-report .report-head, body.pr-report .report-actions, body.pr-report #reportPeriod{display:none;}
+    body.pr-report .r-card, body.pr-report .r-section{
+      background:#fff;
+      border:1px solid #ccc;
+      color:#000;
+    }
+    body.pr-report .r-card .rl, body.pr-report .r-section-title{color:#555;}
+    body.pr-report .r-bar-fill{background:#000;}
+    body.pr-report .r-month-bar{background:#999;}
   }
 </style>
 </head>
@@ -384,14 +532,33 @@
   <div class="empty" id="emptyMsg" style="display:none;">No entries yet — log your first trade above.</div>
 
   <div class="actions">
+    <button id="btnReport">View Report</button>
     <button id="btnPrint">Print / Save PDF</button>
     <button id="btnCSV">Export CSV</button>
     <button id="btnJSONExport">Backup JSON</button>
     <button id="btnJSONImport">Restore JSON</button>
     <button id="btnClear">Clear All</button>
   </div>
+  <p style="font-size:10px;color:var(--dim);margin:8px 2px 0;letter-spacing:0.02em;">Updating to a new version of this file? Tap <b style="color:var(--ink);">Backup JSON</b> first, then open the new file and tap <b style="color:var(--ink);">Restore JSON</b> to bring your trades back — no re-entry needed.</p>
   <input type="file" id="fileImport" accept="application/json" style="display:none;">
 
+</div>
+<div id="reportOverlay" class="report-overlay" style="display:none;">
+  <div class="report-panel">
+    <div class="report-head">
+      <h2>LEDGER<span>_</span> REPORT</h2>
+      <button id="btnCloseReport" class="report-close">✕</button>
+    </div>
+    <select id="reportPeriod">
+      <option value="all">All time</option>
+      <option value="thismonth">This month</option>
+      <option value="lastmonth">Last month</option>
+    </select>
+    <div id="reportBody"></div>
+    <div class="report-actions">
+      <button id="btnPrintReport">Print / Save PDF</button>
+    </div>
+  </div>
 </div>
 <div id="toast" class="toast" style="display:none;"></div>
 
@@ -580,14 +747,148 @@ function parseRR(rr){
   return m ? parseFloat(m[1]) : null;
 }
 
-function formatDate(d){
-  const dt = new Date(d + 'T00:00:00');
-  if(isNaN(dt)) return d;
-  return dt.toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'});
+function computeReportData(periodFilter){
+  const now = new Date();
+  let list = trades;
+  if(periodFilter === 'thismonth'){
+    const y = now.getFullYear(), m = now.getMonth();
+    list = trades.filter(t=>{
+      const dt = new Date(t.date + 'T00:00:00');
+      return dt.getFullYear() === y && dt.getMonth() === m;
+    });
+  } else if(periodFilter === 'lastmonth'){
+    const d = new Date(now.getFullYear(), now.getMonth()-1, 1);
+    const y = d.getFullYear(), m = d.getMonth();
+    list = trades.filter(t=>{
+      const dt = new Date(t.date + 'T00:00:00');
+      return dt.getFullYear() === y && dt.getMonth() === m;
+    });
+  }
+
+  const winLoss = list.filter(t=>t.result==='hit' || t.result==='miss');
+  const nonPending = list.filter(t=>t.result!=='pending');
+  const hits = list.filter(t=>t.result==='hit').length;
+  const hitRate = winLoss.length ? Math.round((hits/winLoss.length)*100) : null;
+  const rrVals = nonPending.map(t=>parseRR(t.rr)).filter(v=>v!==null);
+  const avgRR = rrVals.length ? (rrVals.reduce((a,b)=>a+b,0)/rrVals.length) : null;
+
+  // longest hit streak (chronological, hit/miss only)
+  const chronological = [...winLoss].sort((a,b)=> a.date.localeCompare(b.date) || a.serial - b.serial);
+  let longestStreak = 0, current = 0;
+  chronological.forEach(t=>{
+    if(t.result === 'hit'){ current++; longestStreak = Math.max(longestStreak, current); }
+    else { current = 0; }
+  });
+
+  const longs = list.filter(t=>t.dir==='long' && (t.result==='hit'||t.result==='miss'));
+  const shorts = list.filter(t=>t.dir==='short' && (t.result==='hit'||t.result==='miss'));
+  const longRate = longs.length ? Math.round(longs.filter(t=>t.result==='hit').length/longs.length*100) : null;
+  const shortRate = shorts.length ? Math.round(shorts.filter(t=>t.result==='hit').length/shorts.length*100) : null;
+
+  // monthly trend (chronological months present in list, capped to last 6)
+  const monthMap = new Map();
+  chronological.forEach(t=>{
+    const key = monthKey(t.date);
+    if(!monthMap.has(key)) monthMap.set(key, {hits:0, total:0});
+    const m = monthMap.get(key);
+    m.total++;
+    if(t.result==='hit') m.hits++;
+  });
+  let months = Array.from(monthMap.entries()).map(([key, v])=>({
+    key, rate: v.total ? Math.round(v.hits/v.total*100) : 0
+  }));
+  if(months.length > 6) months = months.slice(months.length-6);
+
+  // asset performance
+  const assetMap = new Map();
+  list.forEach(t=>{
+    if(!assetMap.has(t.asset)) assetMap.set(t.asset, {total:0, hits:0, resolved:0});
+    const a = assetMap.get(t.asset);
+    a.total++;
+    if(t.result==='hit'||t.result==='miss'){
+      a.resolved++;
+      if(t.result==='hit') a.hits++;
+    }
+  });
+  let assets = Array.from(assetMap.entries()).map(([asset,v])=>({
+    asset, total:v.total, rate: v.resolved ? Math.round(v.hits/v.resolved*100) : null
+  }));
+  assets.sort((a,b)=> (b.rate ?? -1) - (a.rate ?? -1));
+
+  return { total: list.length, hitRate, avgRR, longestStreak, longRate, shortRate, months, assets };
+}
+
+function renderReport(){
+  const period = document.getElementById('reportPeriod').value;
+  const d = computeReportData(period);
+  const body = document.getElementById('reportBody');
+
+  let html = `
+  <div class="r-grid">
+    <div class="r-card"><div class="rn">${d.total}</div><div class="rl">Trades</div></div>
+    <div class="r-card"><div class="rn">${d.hitRate !== null ? d.hitRate + '%' : '—'}</div><div class="rl">Hit Rate</div></div>
+    <div class="r-card"><div class="rn">${d.avgRR !== null ? '1:' + d.avgRR.toFixed(1) : '—'}</div><div class="rl">Avg R:R</div></div>
+    <div class="r-card"><div class="rn">${d.longestStreak}</div><div class="rl">Longest Streak</div></div>
+  </div>
+
+  <div class="r-section">
+    <div class="r-section-title">Direction breakdown</div>
+    <div class="r-bar-row">
+      <div class="r-bar-label"><span>Long</span><span>${d.longRate !== null ? d.longRate + '%' : '—'}</span></div>
+      <div class="r-bar-track"><div class="r-bar-fill" style="width:${d.longRate ?? 0}%"></div></div>
+    </div>
+    <div class="r-bar-row">
+      <div class="r-bar-label"><span>Short</span><span>${d.shortRate !== null ? d.shortRate + '%' : '—'}</span></div>
+      <div class="r-bar-track"><div class="r-bar-fill" style="width:${d.shortRate ?? 0}%"></div></div>
+    </div>
+  </div>
+  `;
+
+  if(d.months.length){
+    const maxRate = Math.max(...d.months.map(m=>m.rate), 1);
+    html += `<div class="r-section">
+      <div class="r-section-title">Monthly trend</div>
+      <div class="r-months">`;
+    d.months.forEach(m=>{
+      const h = Math.max(4, Math.round((m.rate / 100) * 70));
+      const short = m.key.split(' ')[0].slice(0,3);
+      html += `<div class="r-month-col">
+        <div class="r-month-bar" style="height:${h}px;"></div>
+        <div class="r-month-lbl">${short}</div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  if(d.assets.length){
+    html += `<div class="r-section">
+      <div class="r-section-title">Asset performance</div>
+      <table class="r-asset-table">`;
+    d.assets.forEach(a=>{
+      html += `<tr>
+        <td>${escapeHtml(a.asset)}</td>
+        <td class="right">${a.total} trades</td>
+        <td class="right">${a.rate !== null ? a.rate + '%' : '—'}</td>
+      </tr>`;
+    });
+    html += `</table></div>`;
+  }
+
+  if(d.total === 0){
+    html = `<div class="r-section" style="text-align:center;color:var(--dim);">No trades in this period.</div>`;
+  }
+
+  body.innerHTML = html;
 }
 
 function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function formatDate(d){
+  const dt = new Date(d + 'T00:00:00');
+  if(isNaN(dt)) return d;
+  return dt.toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'});
 }
 
 document.getElementById('tradeForm').addEventListener('submit', function(e){
@@ -706,7 +1007,44 @@ tbody.addEventListener('click', function(e){
   }
 });
 
-document.getElementById('btnPrint').addEventListener('click', ()=>window.print());
+document.getElementById('btnPrint').addEventListener('click', ()=>{
+  const includeReport = confirm('Include the report summary along with your trade data?\n\nOK = Include report\nCancel = Data only');
+  document.body.classList.add('pr-data');
+  if(includeReport){
+    renderReport();
+    document.body.classList.add('pr-report');
+  }
+  window.print();
+});
+
+document.getElementById('btnReport').addEventListener('click', ()=>{
+  renderReport();
+  document.getElementById('reportOverlay').style.display = 'flex';
+});
+
+document.getElementById('btnCloseReport').addEventListener('click', ()=>{
+  document.getElementById('reportOverlay').style.display = 'none';
+});
+
+document.getElementById('reportOverlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'reportOverlay'){
+    document.getElementById('reportOverlay').style.display = 'none';
+  }
+});
+
+document.getElementById('reportPeriod').addEventListener('change', renderReport);
+
+document.getElementById('btnPrintReport').addEventListener('click', ()=>{
+  const includeData = confirm('Include your full trade log table with this report?\n\nOK = Include data\nCancel = Report only');
+  document.body.classList.add('pr-report');
+  if(includeData) document.body.classList.add('pr-data');
+  window.print();
+});
+
+window.addEventListener('afterprint', ()=>{
+  document.body.classList.remove('pr-report');
+  document.body.classList.remove('pr-data');
+});
 
 let toastTimer = null;
 function showUndoToast(deletedTrade, deletedIndex){
