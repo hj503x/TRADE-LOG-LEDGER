@@ -15,7 +15,24 @@
     --miss: #c15a5a;
     --accent: #d8b26a;
     --mono: 'JetBrains Mono','SF Mono',Consolas,monospace;
+    --btn-text: #14161b;
+    --long-c: #8fb5d8; --long-b: #3a5a78;
+    --short-c: #d8a98f; --short-b: #785a3a;
   }
+  :root[data-theme="light"]{
+    --bg: #f5f4f0;
+    --panel: #ffffff;
+    --line: #dcd8cf;
+    --ink: #23252b;
+    --dim: #6b6f7a;
+    --hit: #2f8f5b;
+    --miss: #b23f3f;
+    --accent: #9c6f1f;
+    --btn-text: #ffffff;
+    --long-c: #2c5a78; --long-b: #5f8fb0;
+    --short-c: #7a4a26; --short-b: #b98860;
+  }
+  html{transition:background 0.15s;}
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
@@ -48,6 +65,16 @@
   }
   header h1 span{color:var(--accent);}
   header .sub{font-size:11px;color:var(--dim);letter-spacing:0.04em;}
+  .theme-toggle{
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--dim);
+    padding:4px 9px;
+    border-radius:2px;
+    font-size:13px;
+    line-height:1;
+  }
+  .theme-toggle:hover{color:var(--ink);border-color:var(--dim);}
 
   .stats{
     display:flex;
@@ -125,7 +152,7 @@
     align-self:end;
     background:var(--accent);
     border:1px solid var(--accent);
-    color:#14161b;
+    color:var(--btn-text);
     font-weight:700;
     padding:8px 0;
     text-transform:uppercase;
@@ -152,7 +179,10 @@
     border-bottom:1px solid var(--line);
     white-space:nowrap;
   }
+  tbody td:nth-child(2){white-space:normal;}
   tbody tr:hover{background:rgba(255,255,255,0.02);}
+  tbody tr.row-pending{background:rgba(216,178,106,0.04);}
+  tbody tr.row-pending td:first-child{border-left:2px solid var(--accent);}
   td.num{color:var(--dim);}
   .tag{
     display:inline-block;
@@ -163,8 +193,8 @@
     border-radius:2px;
     border:1px solid;
   }
-  .tag.long{color:#8fb5d8;border-color:#3a5a78;}
-  .tag.short{color:#d8a98f;border-color:#785a3a;}
+  .tag.long{color:var(--long-c);border-color:var(--long-b);}
+  .tag.short{color:var(--short-c);border-color:var(--short-b);}
   .tag.hit{color:var(--hit);border-color:var(--hit);}
   .tag.miss{color:var(--miss);border-color:var(--miss);}
   .tag.breakeven{color:var(--accent);border-color:var(--accent);}
@@ -186,7 +216,6 @@
     border:none;
     color:var(--dim);
     font-size:13px;
-    margin-right:4px;
   }
   .edit:hover{color:var(--accent);}
   .dup{
@@ -194,9 +223,15 @@
     border:none;
     color:var(--dim);
     font-size:13px;
-    margin-right:4px;
   }
   .dup:hover{color:#8fb5d8;}
+  .row-actions{display:flex;gap:4px;}
+  .row-actions button{
+    padding:8px 8px;
+    font-size:14px;
+    border-radius:3px;
+  }
+  .row-actions button:active{background:rgba(255,255,255,0.08);}
   .empty{
     text-align:center;
     color:var(--dim);
@@ -236,7 +271,76 @@
     outline:none;
   }
   .toolbar input{flex:1;min-width:120px;}
+  .toolbar select{min-width:110px;}
   .toolbar input:focus, .toolbar select:focus{border-color:var(--accent);}
+
+  .streak-banner{
+    background:rgba(193,90,90,0.08);
+    border:1px solid var(--miss);
+    color:var(--miss);
+    padding:9px 12px;
+    border-radius:2px;
+    font-size:11px;
+    letter-spacing:0.02em;
+    margin-bottom:10px;
+  }
+  .exposure-banner{
+    background:rgba(216,178,106,0.08);
+    border:1px solid var(--accent);
+    color:var(--accent);
+    padding:9px 12px;
+    border-radius:2px;
+    font-size:11px;
+    letter-spacing:0.02em;
+    margin-bottom:10px;
+  }
+  .calc-box{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:2px;
+    padding:10px;
+    margin-bottom:12px;
+  }
+  .calc-box .more-toggle{border:none;padding:2px 0;margin:0;}
+  .calc-box .more-fields{padding-top:10px;}
+  .target-track{
+    height:8px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:4px;
+    overflow:hidden;
+    margin:4px 0 2px;
+  }
+  .target-fill{height:100%;background:var(--accent);}
+  .target-fill.over{background:var(--hit);}
+  .target-label{display:flex;justify-content:space-between;font-size:10px;color:var(--dim);letter-spacing:0.04em;}
+
+  .fab-add{
+    position:fixed;
+    bottom:20px;
+    right:18px;
+    width:46px;
+    height:46px;
+    border-radius:50%;
+    background:var(--accent);
+    color:var(--btn-text);
+    border:none;
+    font-size:22px;
+    font-weight:700;
+    line-height:1;
+    cursor:pointer;
+    box-shadow:0 4px 14px rgba(0,0,0,0.35);
+    z-index:40;
+  }
+  .fab-add:hover{opacity:0.9;}
+
+  .rules-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:2px;vertical-align:middle;}
+  .rules-dot.ok{background:var(--hit);}
+  .rules-dot.no{background:var(--miss);}
+
+  @media print{
+    .fab-add{display:none;}
+  }
 
   .month-row td{
     background:var(--panel);
@@ -407,14 +511,74 @@
   }
   .report-actions button:hover{color:var(--ink);border-color:var(--dim);}
 
+  .more-toggle{
+    grid-column: 1 / -1;
+    background:transparent;
+    border:1px dashed var(--line);
+    color:var(--dim);
+    padding:7px 0;
+    font-size:10px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    margin-bottom:2px;
+  }
+  .more-toggle:hover{color:var(--ink);border-color:var(--dim);}
+  .more-fields{
+    grid-column: 1 / -1;
+    display:grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap:8px;
+    padding-top:2px;
+  }
+  .more-fields.hidden{display:none;}
+  .rules-toggle{display:flex;gap:6px;}
+  .rules-toggle button{
+    flex:1;
+    background:var(--bg);
+    border:1px solid var(--line);
+    color:var(--dim);
+    padding:7px 0;
+    font-family:var(--mono);
+    font-size:11px;
+  }
+  .rules-toggle button.on-yes{border-color:var(--hit);color:var(--hit);background:rgba(79,174,122,0.08);}
+  .rules-toggle button.on-no{border-color:var(--miss);color:var(--miss);background:rgba(193,90,90,0.08);}
+
+  .row-meta{
+    font-size:9.5px;
+    color:var(--dim);
+    margin-top:3px;
+    letter-spacing:0.02em;
+    white-space:normal;
+  }
+  .row-meta .rok{color:var(--hit);}
+  .row-meta .rno{color:var(--miss);}
+
+  .r-mini-bars{display:flex;flex-direction:column;gap:9px;}
+  .r-mini-row .r-bar-label{display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;}
+  .r-mini-row .r-bar-track{height:6px;background:var(--bg);border-radius:3px;overflow:hidden;}
+  .r-mini-row .r-bar-fill.miss-fill{background:var(--miss);}
+  svg.r-equity{width:100%;height:90px;display:block;}
+  .r-equity-line{fill:none;stroke:var(--accent);stroke-width:1.6;}
+  .r-equity-zero{stroke:var(--line);stroke-width:1;}
+
   @media (max-width: 640px){
-    form{grid-template-columns: 1fr 1fr;}
+    form{grid-template-columns: 70px 1fr;}
+    .f-serial{grid-column:1;}
+    .f-asset{grid-column:2;}
+    .f-date{grid-column:1 / span 2;}
+    .f-dir{grid-column:1;}
+    .f-result{grid-column:2;}
+    .f-rr{grid-column:1 / span 2;}
+    .more-fields{grid-template-columns:1fr 1fr;}
+    .addbtn{grid-column:1 / span 2;padding:12px 0;}
     table{display:block;overflow-x:auto;}
   }
 
   @media print{
     body{background:#fff;color:#000;padding:0;}
     form,.actions,.stats,.toolbar,#editBar,.breakdown,.toast{display:none;}
+    .row-meta{color:#555;}
     header{border-color:#000;}
     header h1, header h1 span{color:#000;}
     thead th{color:#000;border-color:#000;}
@@ -448,7 +612,10 @@
     }
     body.pr-report .r-card .rl, body.pr-report .r-section-title{color:#555;}
     body.pr-report .r-bar-fill{background:#000;}
+    body.pr-report .r-bar-fill.miss-fill{background:#666;}
     body.pr-report .r-month-bar{background:#999;}
+    body.pr-report .r-equity-line{stroke:#000;}
+    body.pr-report .r-equity-zero{stroke:#ccc;}
   }
 </style>
 </head>
@@ -457,7 +624,10 @@
 
   <header>
     <h1>LEDGER<span>_</span> TRADE LOG</h1>
-    <div class="sub" id="dateNow"></div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="sub" id="dateNow"></div>
+      <button id="themeToggle" class="theme-toggle" title="Toggle light/dark theme">☾</button>
+    </div>
   </header>
 
   <div class="stats">
@@ -466,28 +636,31 @@
     <div class="stat"><div class="n" id="statAvgRR">—</div><div class="l">Avg R:R</div></div>
   </div>
   <div class="breakdown" id="breakdown"></div>
+  <div id="targetBar" style="display:none;"></div>
+  <div id="exposureBanner" style="display:none;"></div>
+  <p id="startHint" style="display:none;font-size:11px;color:var(--accent);margin:0 2px 14px;letter-spacing:0.02em;">Log your first trade below to get started — Asset, Date, Direction, then hit +Add.</p>
 
   <form id="tradeForm">
-    <div>
+    <div class="f-serial">
       <label>No.</label>
       <input type="text" id="fSerial" readonly>
     </div>
-    <div>
+    <div class="f-asset">
       <label>Asset</label>
       <input type="text" id="fAsset" placeholder="XAUUSD" required autocomplete="off">
     </div>
-    <div>
+    <div class="f-date">
       <label>Date</label>
       <input type="date" id="fDate" required>
     </div>
-    <div>
+    <div class="f-dir">
       <label>Dir</label>
       <select id="fDir">
         <option value="long">Long</option>
         <option value="short">Short</option>
       </select>
     </div>
-    <div>
+    <div class="f-result">
       <label>Result</label>
       <select id="fResult">
         <option value="pending" selected>Pending</option>
@@ -496,15 +669,101 @@
         <option value="breakeven">Break Even</option>
       </select>
     </div>
-    <div>
+    <div class="f-rr">
       <label>R:R</label>
       <input type="text" id="fRR" placeholder="1:2" autocomplete="off">
     </div>
+    <button type="button" class="more-toggle" id="moreToggle">+ Rules / Mistake / Emotion / Session</button>
+    <div class="more-fields" id="moreFields">
+      <div>
+        <label>Setup</label>
+        <input type="text" id="fSetup" placeholder="breakout, pullback" autocomplete="off">
+      </div>
+      <div>
+        <label>Rules followed?</label>
+        <div class="rules-toggle">
+          <button type="button" id="rulesYes">Yes</button>
+          <button type="button" id="rulesNo">No</button>
+        </div>
+      </div>
+      <div>
+        <label>Mistake</label>
+        <select id="fMistake">
+          <option value="">None</option>
+          <option>Oversized</option>
+          <option>Entered early</option>
+          <option>Moved stop</option>
+          <option>Revenge trade</option>
+          <option>FOMO entry</option>
+          <option>Ignored plan</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div>
+        <label>Emotion</label>
+        <select id="fEmotion">
+          <option value="">—</option>
+          <option>Calm</option>
+          <option>Confident</option>
+          <option>FOMO</option>
+          <option>Bored</option>
+          <option>Tilted</option>
+          <option>Anxious</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div>
+        <label>Session</label>
+        <select id="fSession">
+          <option value="">—</option>
+          <option>London</option>
+          <option>New York</option>
+          <option>Asian</option>
+          <option>Overlap</option>
+          <option>Other</option>
+        </select>
+      </div>
+    </div>
     <button type="submit" class="addbtn" id="submitBtn">+ Add</button>
   </form>
+  <p style="font-size:10px;color:var(--dim);margin:6px 2px 18px;">R:R format: <b style="color:var(--ink);">1:2</b> (risk:reward) — a plain number like <b style="color:var(--ink);">2</b> works too. Leave blank until known.</p>
+
+  <div class="calc-box" id="calcBox">
+    <button type="button" class="more-toggle" id="calcToggle">+ Position size calculator</button>
+    <div class="more-fields hidden" id="calcFields">
+      <div>
+        <label>Account size</label>
+        <input type="number" id="calcAccount" placeholder="e.g. 1000">
+      </div>
+      <div>
+        <label>Risk %</label>
+        <input type="number" step="0.1" id="calcRiskPct" placeholder="e.g. 1">
+      </div>
+      <div>
+        <label>Stop distance (price units)</label>
+        <input type="number" step="0.0001" id="calcStop" placeholder="e.g. 5.5">
+      </div>
+      <div>
+        <label>Suggested size</label>
+        <input type="text" id="calcResult" readonly placeholder="—">
+      </div>
+    </div>
+  </div>
+
+  <div class="calc-box" id="targetBox">
+    <button type="button" class="more-toggle" id="targetToggle">+ Weekly R target</button>
+    <div class="more-fields hidden" id="targetFields">
+      <div>
+        <label>Weekly target (R)</label>
+        <input type="number" step="0.5" id="fWeeklyTarget" placeholder="e.g. 5">
+      </div>
+    </div>
+  </div>
   <div id="editBar" style="display:none;margin:-10px 0 18px;">
     <button id="btnCancelEdit" style="background:transparent;border:1px solid var(--line);color:var(--dim);padding:6px 12px;font-family:var(--mono);font-size:11px;border-radius:2px;cursor:pointer;">Cancel edit</button>
   </div>
+
+  <div id="streakBanner" style="display:none;"></div>
 
   <div class="toolbar">
     <input type="text" id="searchBox" placeholder="Search asset...">
@@ -512,6 +771,35 @@
       <option value="newest">Newest first</option>
       <option value="oldest">Oldest first</option>
       <option value="asset">Asset A–Z</option>
+    </select>
+    <select id="tagFilter">
+      <option value="">All trades</option>
+      <optgroup label="Rules">
+        <option value="rules:yes">Rules followed</option>
+        <option value="rules:no">Rules broken</option>
+      </optgroup>
+      <optgroup label="Session">
+        <option value="session:London">London</option>
+        <option value="session:New York">New York</option>
+        <option value="session:Asian">Asian</option>
+        <option value="session:Overlap">Overlap</option>
+      </optgroup>
+      <optgroup label="Mistake">
+        <option value="mistake:Oversized">Oversized</option>
+        <option value="mistake:Entered early">Entered early</option>
+        <option value="mistake:Moved stop">Moved stop</option>
+        <option value="mistake:Revenge trade">Revenge trade</option>
+        <option value="mistake:FOMO entry">FOMO entry</option>
+        <option value="mistake:Ignored plan">Ignored plan</option>
+      </optgroup>
+      <optgroup label="Emotion">
+        <option value="emotion:Calm">Calm</option>
+        <option value="emotion:Confident">Confident</option>
+        <option value="emotion:FOMO">FOMO</option>
+        <option value="emotion:Bored">Bored</option>
+        <option value="emotion:Tilted">Tilted</option>
+        <option value="emotion:Anxious">Anxious</option>
+      </optgroup>
     </select>
   </div>
 
@@ -537,12 +825,15 @@
     <button id="btnCSV">Export CSV</button>
     <button id="btnJSONExport">Backup JSON</button>
     <button id="btnJSONImport">Restore JSON</button>
+    <button id="btnHomeScreen">Add to Home Screen</button>
     <button id="btnClear">Clear All</button>
   </div>
+  <p id="backupReminder" style="display:none;font-size:10px;color:var(--accent);margin:8px 2px 0;letter-spacing:0.02em;"></p>
   <p style="font-size:10px;color:var(--dim);margin:8px 2px 0;letter-spacing:0.02em;">Updating to a new version of this file? Tap <b style="color:var(--ink);">Backup JSON</b> first, then open the new file and tap <b style="color:var(--ink);">Restore JSON</b> to bring your trades back — no re-entry needed.</p>
   <input type="file" id="fileImport" accept="application/json" style="display:none;">
 
 </div>
+<button id="fabAdd" class="fab-add" title="Jump to add trade">+</button>
 <div id="reportOverlay" class="report-overlay" style="display:none;">
   <div class="report-panel">
     <div class="report-head">
@@ -577,6 +868,112 @@ const fResult = document.getElementById('fResult');
 const fRR = document.getElementById('fRR');
 const searchBox = document.getElementById('searchBox');
 const sortSelect = document.getElementById('sortSelect');
+const fMistake = document.getElementById('fMistake');
+const fEmotion = document.getElementById('fEmotion');
+const fSession = document.getElementById('fSession');
+const fSetup = document.getElementById('fSetup');
+const tagFilter = document.getElementById('tagFilter');
+const fabAdd = document.getElementById('fabAdd');
+const moreToggle = document.getElementById('moreToggle');
+const moreFields = document.getElementById('moreFields');
+const rulesYesBtn = document.getElementById('rulesYes');
+const rulesNoBtn = document.getElementById('rulesNo');
+let rulesFollowedState = null;
+
+const MORE_OPEN_KEY = 'ledger_more_open';
+function setMoreOpen(open){
+  moreFields.classList.toggle('hidden', !open);
+  localStorage.setItem(MORE_OPEN_KEY, open ? '1' : '0');
+}
+setMoreOpen(localStorage.getItem(MORE_OPEN_KEY) === '1');
+moreToggle.addEventListener('click', ()=>{
+  setMoreOpen(moreFields.classList.contains('hidden'));
+});
+
+fabAdd.addEventListener('click', ()=>{
+  window.scrollTo({top:0, behavior:'smooth'});
+  fAsset.focus();
+});
+
+tagFilter.addEventListener('change', render);
+
+// ---- settings (account size, risk %, weekly target) ----
+const SETTINGS_KEY = 'ledger_settings_v1';
+let settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+function saveSettings(){ localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }
+
+const calcToggle = document.getElementById('calcToggle');
+const calcFields = document.getElementById('calcFields');
+const calcAccount = document.getElementById('calcAccount');
+const calcRiskPct = document.getElementById('calcRiskPct');
+const calcStop = document.getElementById('calcStop');
+const calcResult = document.getElementById('calcResult');
+calcToggle.addEventListener('click', ()=> calcFields.classList.toggle('hidden'));
+calcAccount.value = settings.accountSize || '';
+calcRiskPct.value = settings.riskPct || '';
+function runCalc(){
+  const acc = parseFloat(calcAccount.value);
+  const risk = parseFloat(calcRiskPct.value);
+  const stop = parseFloat(calcStop.value);
+  settings.accountSize = calcAccount.value;
+  settings.riskPct = calcRiskPct.value;
+  saveSettings();
+  if(!acc || !risk || !stop){ calcResult.value = ''; return; }
+  const riskAmount = acc * (risk/100);
+  const size = riskAmount / stop;
+  calcResult.value = size.toFixed(2) + ' units (risking ' + riskAmount.toFixed(2) + ')';
+}
+[calcAccount, calcRiskPct, calcStop].forEach(el=>el.addEventListener('input', runCalc));
+
+const targetToggle = document.getElementById('targetToggle');
+const targetFields = document.getElementById('targetFields');
+const fWeeklyTarget = document.getElementById('fWeeklyTarget');
+targetToggle.addEventListener('click', ()=> targetFields.classList.toggle('hidden'));
+fWeeklyTarget.value = settings.weeklyTarget || '';
+fWeeklyTarget.addEventListener('input', ()=>{
+  settings.weeklyTarget = fWeeklyTarget.value;
+  saveSettings();
+  render();
+});
+
+// ---- add to home screen ----
+document.getElementById('btnHomeScreen').addEventListener('click', ()=>{
+  const ua = navigator.userAgent;
+  let msg;
+  if(/iPhone|iPad|iPod/.test(ua)){
+    msg = 'In Safari: tap the Share icon, then "Add to Home Screen".';
+  } else if(/Android/.test(ua)){
+    msg = 'In Chrome: tap the ⋮ menu, then "Add to Home screen" or "Install app".';
+  } else {
+    msg = 'Open this file in your phone\'s browser, then use its menu to "Add to Home Screen".';
+  }
+  alert(msg);
+});
+
+// ---- backup reminder ----
+const BACKUP_KEY = 'ledger_last_backup';
+function checkBackupReminder(){
+  const el = document.getElementById('backupReminder');
+  if(trades.length === 0){ el.style.display='none'; return; }
+  const last = localStorage.getItem(BACKUP_KEY);
+  const days = last ? Math.floor((Date.now() - Number(last)) / 86400000) : null;
+  if(days === null){
+    el.textContent = 'No backup on record yet — tap Backup JSON to save a copy.';
+    el.style.display = 'block';
+  } else if(days >= 7){
+    el.textContent = `Last backup was ${days} days ago — consider tapping Backup JSON.`;
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+}
+function setRulesFollowed(val){
+  rulesFollowedState = val;
+  rulesYesBtn.className = val === true ? 'on-yes' : '';
+  rulesNoBtn.className = val === false ? 'on-no' : '';
+}
+rulesYesBtn.addEventListener('click', ()=>setRulesFollowed(rulesFollowedState===true ? null : true));
+rulesNoBtn.addEventListener('click', ()=>setRulesFollowed(rulesFollowedState===false ? null : false));
 
 document.getElementById('dateNow').textContent = new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'});
 fDate.valueAsDate = new Date();
@@ -611,10 +1008,25 @@ function render(){
   }
   tbody.innerHTML = '';
 
+  document.getElementById('startHint').style.display = trades.length === 0 ? 'block' : 'none';
+
   const query = searchBox.value.trim().toUpperCase();
   const sortMode = sortSelect.value;
+  const filterVal = tagFilter.value;
 
   let filtered = trades.filter(t => !query || t.asset.includes(query));
+  if(filterVal){
+    const [kind, val] = filterVal.split(':');
+    filtered = filtered.filter(t=>{
+      if(kind==='rules') return val==='yes' ? t.rulesFollowed===true : t.rulesFollowed===false;
+      if(kind==='session') return t.session === val;
+      if(kind==='mistake') return t.mistake === val;
+      if(kind==='emotion') return t.emotion === val;
+      return true;
+    });
+  }
+
+  updateStreakBanner();
 
   if(trades.length === 0){
     emptyMsg.style.display = 'block';
@@ -662,22 +1074,57 @@ function render(){
   updateStats();
 }
 
+function symbolFor(result){
+  return {hit:'✓', miss:'✕', breakeven:'≈', pending:'•'}[result] || '';
+}
+
+function metaLine(t){
+  const bits = [];
+  if(t.setup) bits.push(escapeHtml(t.setup));
+  if(t.session) bits.push(escapeHtml(t.session));
+  if(t.rulesFollowed === true) bits.push('<span class="rules-dot ok"></span>rules');
+  else if(t.rulesFollowed === false) bits.push('<span class="rules-dot no"></span>rules');
+  if(t.mistake) bits.push(escapeHtml(t.mistake));
+  if(t.emotion) bits.push(escapeHtml(t.emotion));
+  return bits.length ? `<div class="row-meta">${bits.join(' · ')}</div>` : '';
+}
+
 function rowEl(t){
   const tr = document.createElement('tr');
+  if(t.result === 'pending') tr.className = 'row-pending';
   tr.innerHTML = `
     <td class="num">${String(t.serial).padStart(3,'0')}</td>
-    <td>${escapeHtml(t.asset)}</td>
+    <td>${escapeHtml(t.asset)}${metaLine(t)}</td>
     <td class="num">${formatDate(t.date)}</td>
     <td><span class="tag ${t.dir}">${t.dir}</span></td>
-    <td><span class="tag ${t.result} result-tag" data-id="${t.id}" title="Tap to update">${t.result}</span></td>
+    <td><span class="tag ${t.result} result-tag" data-id="${t.id}" title="Tap to update">${symbolFor(t.result)} ${t.result}</span></td>
     <td class="rr rr-edit" data-id="${t.id}" title="Tap to set R:R">${t.rr ? escapeHtml(t.rr) : '—'}</td>
     <td>
-      <button class="dup" data-id="${t.id}" title="Duplicate">⧉</button>
-      <button class="edit" data-id="${t.id}" title="Edit">✎</button>
-      <button class="del" data-id="${t.id}" title="Delete">✕</button>
+      <div class="row-actions">
+        <button class="dup" data-id="${t.id}" title="Duplicate">⧉</button>
+        <button class="edit" data-id="${t.id}" title="Edit">✎</button>
+        <button class="del" data-id="${t.id}" title="Delete">✕</button>
+      </div>
     </td>
   `;
   return tr;
+}
+
+function updateStreakBanner(){
+  const banner = document.getElementById('streakBanner');
+  const winLoss = [...trades].filter(t=>t.result==='hit'||t.result==='miss')
+    .sort((a,b)=> b.date.localeCompare(a.date) || b.serial - a.serial);
+  let streak = 0;
+  for(const t of winLoss){
+    if(t.result === 'miss') streak++; else break;
+  }
+  if(streak >= 3){
+    banner.className = 'streak-banner';
+    banner.textContent = `${streak} losses in a row — worth a check-in before the next trade.`;
+    banner.style.display = 'block';
+  } else {
+    banner.style.display = 'none';
+  }
 }
 
 function updateBreakdown(){
@@ -718,6 +1165,9 @@ function updateBreakdown(){
 function updateStats(){
   const total = trades.length;
   document.getElementById('statTotal').textContent = total;
+  updateTargetBar();
+  updateExposureBanner();
+  checkBackupReminder();
   if(total === 0){
     document.getElementById('statHitRate').textContent = '—';
     document.getElementById('statAvgRR').textContent = '—';
@@ -739,6 +1189,57 @@ function updateStats(){
     document.getElementById('statAvgRR').textContent = '—';
   }
   updateBreakdown();
+}
+
+function startOfWeek(d){
+  const dt = new Date(d);
+  const day = dt.getDay();
+  const diff = (day === 0 ? -6 : 1) - day; // Monday as start
+  dt.setDate(dt.getDate() + diff);
+  dt.setHours(0,0,0,0);
+  return dt;
+}
+
+function updateTargetBar(){
+  const el = document.getElementById('targetBar');
+  const target = parseFloat(settings.weeklyTarget);
+  if(!target){ el.style.display = 'none'; return; }
+  const weekStart = startOfWeek(new Date());
+  const thisWeek = trades.filter(t=>{
+    if(t.result==='pending') return false;
+    const dt = new Date(t.date + 'T00:00:00');
+    return dt >= weekStart;
+  });
+  let cum = 0;
+  thisWeek.forEach(t=>{
+    const rrVal = parseRR(t.rr);
+    if(t.result==='hit') cum += (rrVal !== null ? rrVal : 1);
+    else if(t.result==='miss') cum -= 1;
+  });
+  const pct = Math.max(0, Math.min(100, (cum/target)*100));
+  el.innerHTML = `
+    <div class="target-label"><span>Weekly target</span><span>${cum.toFixed(1)}R / ${target}R</span></div>
+    <div class="target-track"><div class="target-fill ${cum>=target?'over':''}" style="width:${pct}%"></div></div>
+  `;
+  el.style.display = 'block';
+}
+
+function updateExposureBanner(){
+  const el = document.getElementById('exposureBanner');
+  const pending = trades.filter(t=>t.result==='pending');
+  if(pending.length < 2){ el.style.display = 'none'; return; }
+  const counts = {};
+  pending.forEach(t=>{ counts[t.asset] = (counts[t.asset]||0)+1; });
+  const dup = Object.entries(counts).filter(([k,v])=>v>1);
+  if(dup.length){
+    el.textContent = `${dup.map(([k,v])=>`${v}× ${k}`).join(', ')} pending at once — check you're not doubling up on the same exposure.`;
+    el.style.display = 'block';
+  } else if(pending.length >= 3){
+    el.textContent = `${pending.length} pending trades open at once — worth checking your combined risk.`;
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
 }
 
 function parseRR(rr){
@@ -815,7 +1316,84 @@ function computeReportData(periodFilter){
   }));
   assets.sort((a,b)=> (b.rate ?? -1) - (a.rate ?? -1));
 
-  return { total: list.length, hitRate, avgRR, longestStreak, longRate, shortRate, months, assets };
+  // rule adherence
+  const withRuleData = nonPending.filter(t=>t.rulesFollowed===true || t.rulesFollowed===false);
+  const rulesFollowedCount = withRuleData.filter(t=>t.rulesFollowed===true).length;
+  const rulePct = withRuleData.length ? Math.round((rulesFollowedCount/withRuleData.length)*100) : null;
+
+  // mistake breakdown
+  const mistakeCounts = {};
+  nonPending.forEach(t=>{ if(t.mistake){ mistakeCounts[t.mistake] = (mistakeCounts[t.mistake]||0)+1; } });
+  const mistakes = Object.entries(mistakeCounts).map(([name,count])=>({name,count})).sort((a,b)=>b.count-a.count);
+
+  // session breakdown (win rate)
+  const sessionGroups = {};
+  winLoss.forEach(t=>{
+    const k = t.session || 'Unspecified';
+    if(!sessionGroups[k]) sessionGroups[k] = {wins:0,total:0};
+    sessionGroups[k].total++;
+    if(t.result==='hit') sessionGroups[k].wins++;
+  });
+  const sessions = Object.entries(sessionGroups).map(([name,v])=>({
+    name, total:v.total, rate: Math.round((v.wins/v.total)*100)
+  })).sort((a,b)=>b.total-a.total);
+
+  // equity curve: cumulative R using rr value as gain on hit, -1 on miss, 0 on breakeven
+  const equityChron = [...nonPending].sort((a,b)=> a.date.localeCompare(b.date) || a.serial - b.serial);
+  let cum = 0;
+  const equity = equityChron.map(t=>{
+    const rrVal = parseRR(t.rr);
+    if(t.result === 'hit') cum += (rrVal !== null ? rrVal : 1);
+    else if(t.result === 'miss') cum -= 1;
+    return cum;
+  });
+
+  // current streak (most recent first, by result type)
+  const recentFirst = [...winLoss].sort((a,b)=> b.date.localeCompare(a.date) || b.serial - a.serial);
+  let currentStreak = 0, streakType = recentFirst[0] ? recentFirst[0].result : null;
+  for(const t of recentFirst){
+    if(t.result === streakType) currentStreak++; else break;
+  }
+
+  // setup win rate
+  const setupGroups = {};
+  winLoss.forEach(t=>{
+    const k = t.setup || 'Unspecified';
+    if(!setupGroups[k]) setupGroups[k] = {wins:0,total:0};
+    setupGroups[k].total++;
+    if(t.result==='hit') setupGroups[k].wins++;
+  });
+  const setups = Object.entries(setupGroups).map(([name,v])=>({
+    name, total:v.total, rate: Math.round((v.wins/v.total)*100)
+  })).sort((a,b)=>b.total-a.total);
+
+  // day-of-week win rate
+  const dowNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dowGroups = {};
+  winLoss.forEach(t=>{
+    const dt = new Date(t.date + 'T00:00:00');
+    const k = dowNames[dt.getDay()];
+    if(!dowGroups[k]) dowGroups[k] = {wins:0,total:0};
+    dowGroups[k].total++;
+    if(t.result==='hit') dowGroups[k].wins++;
+  });
+  const dow = dowNames.filter(d=>dowGroups[d]).map(name=>({
+    name, total:dowGroups[name].total, rate: Math.round((dowGroups[name].wins/dowGroups[name].total)*100)
+  }));
+
+  // best/worst single trade by R
+  let best = null, worst = null;
+  nonPending.forEach(t=>{
+    const rrVal = parseRR(t.rr);
+    let r;
+    if(t.result==='hit') r = (rrVal !== null ? rrVal : 1);
+    else if(t.result==='miss') r = -1;
+    else r = 0;
+    if(best === null || r > best.r) best = {t, r};
+    if(worst === null || r < worst.r) worst = {t, r};
+  });
+
+  return { total: list.length, hitRate, avgRR, longestStreak, longRate, shortRate, months, assets, rulePct, mistakes, sessions, equity, currentStreak, streakType, setups, dow, best, worst };
 }
 
 function renderReport(){
@@ -829,8 +1407,32 @@ function renderReport(){
     <div class="r-card"><div class="rn">${d.hitRate !== null ? d.hitRate + '%' : '—'}</div><div class="rl">Hit Rate</div></div>
     <div class="r-card"><div class="rn">${d.avgRR !== null ? '1:' + d.avgRR.toFixed(1) : '—'}</div><div class="rl">Avg R:R</div></div>
     <div class="r-card"><div class="rn">${d.longestStreak}</div><div class="rl">Longest Streak</div></div>
+    <div class="r-card"><div class="rn">${d.rulePct !== null ? d.rulePct + '%' : '—'}</div><div class="rl">Rule Adherence</div></div>
+    <div class="r-card"><div class="rn">${d.currentStreak || 0}</div><div class="rl">Current ${d.streakType === 'hit' ? 'Win' : d.streakType === 'miss' ? 'Loss' : ''} Streak</div></div>
   </div>
+  `;
 
+  if(d.equity.length > 1){
+    const minY = Math.min(0, ...d.equity);
+    const maxY = Math.max(0, ...d.equity);
+    const rangeY = (maxY-minY) || 1;
+    const w=560,h=90,pad=4;
+    const pts = d.equity.map((v,i)=>{
+      const x = pad + (i/(d.equity.length-1))*(w-2*pad);
+      const y = h-pad - ((v-minY)/rangeY)*(h-2*pad);
+      return `${x},${y}`;
+    }).join(' ');
+    const zeroY = h-pad - ((0-minY)/rangeY)*(h-2*pad);
+    html += `<div class="r-section">
+      <div class="r-section-title">Equity curve (cumulative R)</div>
+      <svg class="r-equity" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+        <line class="r-equity-zero" x1="0" y1="${zeroY}" x2="${w}" y2="${zeroY}"/>
+        <polyline class="r-equity-line" points="${pts}"/>
+      </svg>
+    </div>`;
+  }
+
+  html += `
   <div class="r-section">
     <div class="r-section-title">Direction breakdown</div>
     <div class="r-bar-row">
@@ -843,6 +1445,59 @@ function renderReport(){
     </div>
   </div>
   `;
+
+  if(d.sessions.length){
+    html += `<div class="r-section"><div class="r-section-title">Win rate by session</div><div class="r-mini-bars">`;
+    d.sessions.forEach(s=>{
+      html += `<div class="r-mini-row">
+        <div class="r-bar-label"><span>${escapeHtml(s.name)}</span><span>${s.rate}% (${s.total})</span></div>
+        <div class="r-bar-track"><div class="r-bar-fill" style="width:${s.rate}%"></div></div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  if(d.setups.length){
+    html += `<div class="r-section"><div class="r-section-title">Win rate by setup</div><div class="r-mini-bars">`;
+    d.setups.forEach(s=>{
+      html += `<div class="r-mini-row">
+        <div class="r-bar-label"><span>${escapeHtml(s.name)}</span><span>${s.rate}% (${s.total})</span></div>
+        <div class="r-bar-track"><div class="r-bar-fill" style="width:${s.rate}%"></div></div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  if(d.dow.length){
+    html += `<div class="r-section"><div class="r-section-title">Win rate by day of week</div><div class="r-mini-bars">`;
+    d.dow.forEach(s=>{
+      html += `<div class="r-mini-row">
+        <div class="r-bar-label"><span>${s.name}</span><span>${s.rate}% (${s.total})</span></div>
+        <div class="r-bar-track"><div class="r-bar-fill" style="width:${s.rate}%"></div></div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  if(d.best && d.worst && d.total > 0){
+    html += `<div class="r-grid">
+      <div class="r-card"><div class="rn" style="color:var(--hit);">+${d.best.r.toFixed(1)}R</div><div class="rl">Best: ${escapeHtml(d.best.t.asset)} ${formatDate(d.best.t.date)}</div></div>
+      <div class="r-card"><div class="rn" style="color:var(--miss);">${d.worst.r.toFixed(1)}R</div><div class="rl">Worst: ${escapeHtml(d.worst.t.asset)} ${formatDate(d.worst.t.date)}</div></div>
+    </div>`;
+  }
+
+  if(d.mistakes.length){
+    const maxM = Math.max(...d.mistakes.map(m=>m.count));
+    html += `<div class="r-section"><div class="r-section-title">Top mistakes</div><div class="r-mini-bars">`;
+    d.mistakes.forEach(m=>{
+      const pct = Math.round((m.count/maxM)*100);
+      html += `<div class="r-mini-row">
+        <div class="r-bar-label"><span>${escapeHtml(m.name)}</span><span>${m.count}×</span></div>
+        <div class="r-bar-track"><div class="r-bar-fill miss-fill" style="width:${pct}%"></div></div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
 
   if(d.months.length){
     const maxRate = Math.max(...d.months.map(m=>m.rate), 1);
@@ -898,7 +1553,12 @@ document.getElementById('tradeForm').addEventListener('submit', function(e){
     date: fDate.value,
     dir: fDir.value,
     result: fResult.value,
-    rr: fRR.value.trim()
+    rr: fRR.value.trim(),
+    setup: fSetup.value.trim(),
+    mistake: fMistake.value,
+    emotion: fEmotion.value,
+    session: fSession.value,
+    rulesFollowed: rulesFollowedState
   };
   if(editingId !== null){
     const t = trades.find(tr=>tr.id === editingId);
@@ -913,6 +1573,11 @@ document.getElementById('tradeForm').addEventListener('submit', function(e){
   fDate.valueAsDate = new Date();
   fDir.value = 'long';
   fResult.value = 'pending';
+  fSetup.value = '';
+  fMistake.value = '';
+  fEmotion.value = '';
+  fSession.value = '';
+  setRulesFollowed(null);
   fAsset.focus();
   render();
 });
@@ -929,6 +1594,14 @@ function enterEditMode(id){
   fDir.value = t.dir;
   fResult.value = t.result;
   fRR.value = t.rr || '';
+  fSetup.value = t.setup || '';
+  fMistake.value = t.mistake || '';
+  fEmotion.value = t.emotion || '';
+  fSession.value = t.session || '';
+  setRulesFollowed(t.rulesFollowed === undefined ? null : t.rulesFollowed);
+  if(t.mistake || t.emotion || t.session || t.setup || (t.rulesFollowed !== undefined && t.rulesFollowed !== null)){
+    setMoreOpen(true);
+  }
   fSerial.value = String(t.serial).padStart(3,'0');
   document.getElementById('submitBtn').textContent = '✓ Update';
   document.getElementById('editBar').style.display = 'block';
@@ -949,6 +1622,11 @@ document.getElementById('btnCancelEdit').addEventListener('click', ()=>{
   fDate.valueAsDate = new Date();
   fDir.value = 'long';
   fResult.value = 'pending';
+  fSetup.value = '';
+  fMistake.value = '';
+  fEmotion.value = '';
+  fSession.value = '';
+  setRulesFollowed(null);
   render();
 });
 
@@ -1073,9 +1751,10 @@ document.getElementById('btnClear').addEventListener('click', ()=>{
 
 document.getElementById('btnCSV').addEventListener('click', ()=>{
   if(trades.length === 0) return;
-  let csv = 'Serial,Asset,Date,Direction,Result,R:R\n';
+  let csv = 'Serial,Asset,Date,Direction,Result,R:R,Setup,Session,RulesFollowed,Mistake,Emotion\n';
   trades.forEach(t=>{
-    csv += `${t.serial},${t.asset},${t.date},${t.dir},${t.result},${t.rr}\n`;
+    const rf = t.rulesFollowed === true ? 'Yes' : (t.rulesFollowed === false ? 'No' : '');
+    csv += `${t.serial},${t.asset},${t.date},${t.dir},${t.result},${t.rr},${t.setup||''},${t.session||''},${rf},${t.mistake||''},${t.emotion||''}\n`;
   });
   const blob = new Blob([csv], {type:'text/csv'});
   const url = URL.createObjectURL(blob);
@@ -1098,6 +1777,8 @@ document.getElementById('btnJSONExport').addEventListener('click', ()=>{
   a.download = `trade-log-backup-${new Date().toISOString().slice(0,10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
+  localStorage.setItem(BACKUP_KEY, String(Date.now()));
+  checkBackupReminder();
 });
 
 const fileImport = document.getElementById('fileImport');
@@ -1151,6 +1832,18 @@ fieldOrder.forEach((el, idx)=>{
       }
     }
   });
+});
+
+const THEME_KEY = 'ledger_theme';
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('themeToggle').textContent = theme === 'light' ? '☀' : '☾';
+  localStorage.setItem(THEME_KEY, theme);
+}
+applyTheme(localStorage.getItem(THEME_KEY) || 'dark');
+document.getElementById('themeToggle').addEventListener('click', ()=>{
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  applyTheme(current === 'dark' ? 'light' : 'dark');
 });
 
 render();
