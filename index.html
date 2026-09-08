@@ -1243,9 +1243,16 @@ function updateExposureBanner(){
 }
 
 function parseRR(rr){
-  // accepts "1:2", "1:2.5", or plain "2"
-  const m = rr.match(/^\s*1?\s*:?\s*([\d.]+)\s*$/);
-  return m ? parseFloat(m[1]) : null;
+  // accepts "1:2", "1:2.5", or a plain number like "2" or "1.5"
+  if(!rr) return null;
+  const s = String(rr).trim();
+  if(s.includes(':')){
+    const parts = s.split(':');
+    const val = parseFloat(parts[parts.length - 1]);
+    return isNaN(val) ? null : val;
+  }
+  const val = parseFloat(s);
+  return isNaN(val) ? null : val;
 }
 
 function computeReportData(periodFilter){
