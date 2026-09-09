@@ -431,10 +431,24 @@
   }
   .report-close:hover{color:var(--ink);}
   #reportPeriod{
-    margin-bottom:16px;
+    margin-bottom:10px;
     width:auto;
     min-width:150px;
   }
+  #reportTagFilter{
+    margin-bottom:16px;
+    margin-left:8px;
+    width:auto;
+    min-width:150px;
+  }
+  .report-custom-range{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin:0 0 12px;
+  }
+  .report-custom-range input{width:auto;}
+  .report-custom-range span{font-size:11px;color:var(--dim);}
   .r-grid{
     display:grid;
     grid-template-columns:1fr 1fr;
@@ -448,6 +462,8 @@
     padding:12px;
   }
   .r-card .rn{font-size:19px;font-weight:600;}
+  .r-card .rn.pos{color:var(--hit);}
+  .r-card .rn.neg{color:var(--miss);}
   .r-card .rl{font-size:9px;color:var(--dim);letter-spacing:0.1em;text-transform:uppercase;margin-top:3px;}
   .r-section{
     background:var(--panel);
@@ -553,6 +569,8 @@
   }
   .row-meta .rok{color:var(--hit);}
   .row-meta .rno{color:var(--miss);}
+  .rok{color:var(--hit);}
+  .rno{color:var(--miss);}
 
   .r-mini-bars{display:flex;flex-direction:column;gap:9px;}
   .r-mini-row .r-bar-label{display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;}
@@ -596,7 +614,7 @@
       position:static;
       background:#fff;
       padding:0;
-      display:block;
+      display:block !important;
       margin-top:20px;
     }
     body.pr-report .report-panel{
@@ -604,7 +622,7 @@
       border:none;
       padding:0;
     }
-    body.pr-report .report-head, body.pr-report .report-actions, body.pr-report #reportPeriod{display:none;}
+    body.pr-report .report-head, body.pr-report .report-actions, body.pr-report #reportPeriod, body.pr-report #reportTagFilter, body.pr-report .report-custom-range{display:none;}
     body.pr-report .r-card, body.pr-report .r-section{
       background:#fff;
       border:1px solid #ccc;
@@ -844,6 +862,41 @@
       <option value="all">All time</option>
       <option value="thismonth">This month</option>
       <option value="lastmonth">Last month</option>
+      <option value="custom">Custom range</option>
+    </select>
+    <div id="reportCustomRange" class="report-custom-range" style="display:none;">
+      <input type="date" id="reportFrom">
+      <span>to</span>
+      <input type="date" id="reportTo">
+    </div>
+    <select id="reportTagFilter">
+      <option value="">All trades</option>
+      <optgroup label="Rules">
+        <option value="rules:yes">Rules followed</option>
+        <option value="rules:no">Rules broken</option>
+      </optgroup>
+      <optgroup label="Session">
+        <option value="session:London">London</option>
+        <option value="session:New York">New York</option>
+        <option value="session:Asian">Asian</option>
+        <option value="session:Overlap">Overlap</option>
+      </optgroup>
+      <optgroup label="Mistake">
+        <option value="mistake:Oversized">Oversized</option>
+        <option value="mistake:Entered early">Entered early</option>
+        <option value="mistake:Moved stop">Moved stop</option>
+        <option value="mistake:Revenge trade">Revenge trade</option>
+        <option value="mistake:FOMO entry">FOMO entry</option>
+        <option value="mistake:Ignored plan">Ignored plan</option>
+      </optgroup>
+      <optgroup label="Emotion">
+        <option value="emotion:Calm">Calm</option>
+        <option value="emotion:Confident">Confident</option>
+        <option value="emotion:FOMO">FOMO</option>
+        <option value="emotion:Bored">Bored</option>
+        <option value="emotion:Tilted">Tilted</option>
+        <option value="emotion:Anxious">Anxious</option>
+      </optgroup>
     </select>
     <div id="reportBody"></div>
     <div class="report-actions">
@@ -1255,7 +1308,24 @@ function parseRR(rr){
   return isNaN(val) ? null : val;
 }
 
-function computeReportData(periodFilter){
+function formatRRInput(rrStr){
+  if(!rrStr) return '';
+  const s = String(rrStr).trim();
+  if(!s.includes(':')){
+    const val = parseFloat(s);
+    if(!isNaN(val)) return '1:' + val;
+  }
+  return s;
+}
+
+function tradeR(t){
+  const rrVal = parseRR(t.rr);
+  if(t.result === 'hit') return (rrVal !== null ? rrVal : 1);
+  if(t.result === 'miss') return -1;
+  return 0;
+}
+
+function computeReportData(periodFilter, customFrom, customTo, tagFilterVal){
   const now = new Date();
   let list = trades;
   if(periodFilter === 'thismonth'){
@@ -1270,6 +1340,19 @@ function computeReportData(periodFilter){
     list = trades.filter(t=>{
       const dt = new Date(t.date + 'T00:00:00');
       return dt.getFullYear() === y && dt.getMonth() === m;
+    });
+  } else if(periodFilter === 'custom' && customFrom && customTo){
+    list = trades.filter(t=> t.date >= customFrom && t.date <= customTo);
+  }
+
+  if(tagFilterVal){
+    const [kind, val] = tagFilterVal.split(':');
+    list = list.filter(t=>{
+      if(kind==='rules') return val==='yes' ? t.rulesFollowed===true : t.rulesFollowed===false;
+      if(kind==='session') return t.session === val;
+      if(kind==='mistake') return t.mistake === val;
+      if(kind==='emotion') return t.emotion === val;
+      return true;
     });
   }
 
@@ -1328,10 +1411,17 @@ function computeReportData(periodFilter){
   const rulesFollowedCount = withRuleData.filter(t=>t.rulesFollowed===true).length;
   const rulePct = withRuleData.length ? Math.round((rulesFollowedCount/withRuleData.length)*100) : null;
 
-  // mistake breakdown
-  const mistakeCounts = {};
-  nonPending.forEach(t=>{ if(t.mistake){ mistakeCounts[t.mistake] = (mistakeCounts[t.mistake]||0)+1; } });
-  const mistakes = Object.entries(mistakeCounts).map(([name,count])=>({name,count})).sort((a,b)=>b.count-a.count);
+  // mistake breakdown (count + R cost)
+  const mistakeStats = {};
+  nonPending.forEach(t=>{
+    if(t.mistake){
+      if(!mistakeStats[t.mistake]) mistakeStats[t.mistake] = {count:0, rCost:0};
+      mistakeStats[t.mistake].count++;
+      mistakeStats[t.mistake].rCost += tradeR(t);
+    }
+  });
+  const mistakes = Object.entries(mistakeStats).map(([name,v])=>({name, count:v.count, rCost:v.rCost}))
+    .sort((a,b)=> a.rCost - b.rCost);
 
   // session breakdown (win rate)
   const sessionGroups = {};
@@ -1345,14 +1435,26 @@ function computeReportData(periodFilter){
     name, total:v.total, rate: Math.round((v.wins/v.total)*100)
   })).sort((a,b)=>b.total-a.total);
 
-  // equity curve: cumulative R using rr value as gain on hit, -1 on miss, 0 on breakeven
+  // equity curve: cumulative R, with per-point result for dot coloring
   const equityChron = [...nonPending].sort((a,b)=> a.date.localeCompare(b.date) || a.serial - b.serial);
   let cum = 0;
   const equity = equityChron.map(t=>{
-    const rrVal = parseRR(t.rr);
-    if(t.result === 'hit') cum += (rrVal !== null ? rrVal : 1);
-    else if(t.result === 'miss') cum -= 1;
-    return cum;
+    cum += tradeR(t);
+    return { cum, result: t.result };
+  });
+
+  // profit factor, expectancy, max drawdown
+  const rValues = nonPending.map(t=>tradeR(t));
+  const grossWin = rValues.filter(r=>r>0).reduce((a,b)=>a+b,0);
+  const grossLoss = Math.abs(rValues.filter(r=>r<0).reduce((a,b)=>a+b,0));
+  const profitFactor = grossLoss > 0 ? (grossWin/grossLoss) : (grossWin > 0 ? null : null);
+  const expectancy = rValues.length ? (rValues.reduce((a,b)=>a+b,0)/rValues.length) : null;
+
+  let peak = 0, maxDrawdown = 0;
+  equity.forEach(pt=>{
+    if(pt.cum > peak) peak = pt.cum;
+    const dd = peak - pt.cum;
+    if(dd > maxDrawdown) maxDrawdown = dd;
   });
 
   // current streak (most recent first, by result type)
@@ -1391,21 +1493,21 @@ function computeReportData(periodFilter){
   // best/worst single trade by R
   let best = null, worst = null;
   nonPending.forEach(t=>{
-    const rrVal = parseRR(t.rr);
-    let r;
-    if(t.result==='hit') r = (rrVal !== null ? rrVal : 1);
-    else if(t.result==='miss') r = -1;
-    else r = 0;
+    const r = tradeR(t);
     if(best === null || r > best.r) best = {t, r};
     if(worst === null || r < worst.r) worst = {t, r};
   });
 
-  return { total: list.length, hitRate, avgRR, longestStreak, longRate, shortRate, months, assets, rulePct, mistakes, sessions, equity, currentStreak, streakType, setups, dow, best, worst };
+  return { total: list.length, hitRate, avgRR, longestStreak, longRate, shortRate, months, assets, rulePct, mistakes, sessions, equity, currentStreak, streakType, setups, dow, best, worst, profitFactor, expectancy, maxDrawdown };
 }
 
 function renderReport(){
   const period = document.getElementById('reportPeriod').value;
-  const d = computeReportData(period);
+  const customFrom = document.getElementById('reportFrom').value;
+  const customTo = document.getElementById('reportTo').value;
+  const tagFilterVal = document.getElementById('reportTagFilter').value;
+  document.getElementById('reportCustomRange').style.display = period === 'custom' ? 'flex' : 'none';
+  const d = computeReportData(period, customFrom, customTo, tagFilterVal);
   const body = document.getElementById('reportBody');
 
   let html = `
@@ -1416,25 +1518,35 @@ function renderReport(){
     <div class="r-card"><div class="rn">${d.longestStreak}</div><div class="rl">Longest Streak</div></div>
     <div class="r-card"><div class="rn">${d.rulePct !== null ? d.rulePct + '%' : '—'}</div><div class="rl">Rule Adherence</div></div>
     <div class="r-card"><div class="rn">${d.currentStreak || 0}</div><div class="rl">Current ${d.streakType === 'hit' ? 'Win' : d.streakType === 'miss' ? 'Loss' : ''} Streak</div></div>
+    <div class="r-card"><div class="rn">${d.profitFactor !== null ? d.profitFactor.toFixed(2) : '—'}</div><div class="rl">Profit Factor</div></div>
+    <div class="r-card"><div class="rn ${d.expectancy > 0 ? 'pos' : (d.expectancy < 0 ? 'neg' : '')}">${d.expectancy !== null ? (d.expectancy>0?'+':'')+d.expectancy.toFixed(2)+'R' : '—'}</div><div class="rl">Expectancy / Trade</div></div>
+    <div class="r-card"><div class="rn neg">${d.maxDrawdown ? '-'+d.maxDrawdown.toFixed(1)+'R' : '0R'}</div><div class="rl">Max Drawdown</div></div>
   </div>
   `;
 
   if(d.equity.length > 1){
-    const minY = Math.min(0, ...d.equity);
-    const maxY = Math.max(0, ...d.equity);
+    const values = d.equity.map(p=>p.cum);
+    const minY = Math.min(0, ...values);
+    const maxY = Math.max(0, ...values);
     const rangeY = (maxY-minY) || 1;
     const w=560,h=90,pad=4;
-    const pts = d.equity.map((v,i)=>{
+    const coords = d.equity.map((p,i)=>{
       const x = pad + (i/(d.equity.length-1))*(w-2*pad);
-      const y = h-pad - ((v-minY)/rangeY)*(h-2*pad);
-      return `${x},${y}`;
-    }).join(' ');
+      const y = h-pad - ((p.cum-minY)/rangeY)*(h-2*pad);
+      return {x,y,result:p.result};
+    });
+    const pts = coords.map(c=>`${c.x},${c.y}`).join(' ');
+    const dots = coords.map(c=>{
+      const color = c.result==='hit' ? 'var(--hit)' : (c.result==='miss' ? 'var(--miss)' : 'var(--dim)');
+      return `<circle cx="${c.x}" cy="${c.y}" r="2.4" fill="${color}"/>`;
+    }).join('');
     const zeroY = h-pad - ((0-minY)/rangeY)*(h-2*pad);
     html += `<div class="r-section">
       <div class="r-section-title">Equity curve (cumulative R)</div>
       <svg class="r-equity" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
         <line class="r-equity-zero" x1="0" y1="${zeroY}" x2="${w}" y2="${zeroY}"/>
         <polyline class="r-equity-line" points="${pts}"/>
+        ${dots}
       </svg>
     </div>`;
   }
@@ -1494,13 +1606,14 @@ function renderReport(){
   }
 
   if(d.mistakes.length){
-    const maxM = Math.max(...d.mistakes.map(m=>m.count));
-    html += `<div class="r-section"><div class="r-section-title">Top mistakes</div><div class="r-mini-bars">`;
+    const maxAbsCost = Math.max(...d.mistakes.map(m=>Math.abs(m.rCost)), 0.001);
+    html += `<div class="r-section"><div class="r-section-title">Top mistakes (by R cost)</div><div class="r-mini-bars">`;
     d.mistakes.forEach(m=>{
-      const pct = Math.round((m.count/maxM)*100);
+      const pct = Math.round((Math.abs(m.rCost)/maxAbsCost)*100);
+      const costLabel = (m.rCost>0?'+':'') + m.rCost.toFixed(1) + 'R';
       html += `<div class="r-mini-row">
-        <div class="r-bar-label"><span>${escapeHtml(m.name)}</span><span>${m.count}×</span></div>
-        <div class="r-bar-track"><div class="r-bar-fill miss-fill" style="width:${pct}%"></div></div>
+        <div class="r-bar-label"><span>${escapeHtml(m.name)} (${m.count}×)</span><span class="${m.rCost<0?'rno':'rok'}">${costLabel}</span></div>
+        <div class="r-bar-track"><div class="r-bar-fill ${m.rCost<0?'miss-fill':''}" style="width:${pct}%"></div></div>
       </div>`;
     });
     html += `</div></div>`;
@@ -1560,7 +1673,7 @@ document.getElementById('tradeForm').addEventListener('submit', function(e){
     date: fDate.value,
     dir: fDir.value,
     result: fResult.value,
-    rr: fRR.value.trim(),
+    rr: formatRRInput(fRR.value),
     setup: fSetup.value.trim(),
     mistake: fMistake.value,
     emotion: fEmotion.value,
@@ -1684,7 +1797,7 @@ tbody.addEventListener('click', function(e){
     if(t){
       const val = prompt('Set risk:reward (e.g. 1:2)', t.rr || '');
       if(val !== null){
-        t.rr = val.trim();
+        t.rr = formatRRInput(val);
         save();
         render();
       }
@@ -1718,6 +1831,9 @@ document.getElementById('reportOverlay').addEventListener('click', (e)=>{
 });
 
 document.getElementById('reportPeriod').addEventListener('change', renderReport);
+document.getElementById('reportFrom').addEventListener('change', renderReport);
+document.getElementById('reportTo').addEventListener('change', renderReport);
+document.getElementById('reportTagFilter').addEventListener('change', renderReport);
 
 document.getElementById('btnPrintReport').addEventListener('click', ()=>{
   const includeData = confirm('Include your full trade log table with this report?\n\nOK = Include data\nCancel = Report only');
