@@ -547,6 +547,41 @@
     padding-top:2px;
   }
   .more-fields.hidden{display:none;}
+  .lesson-field{grid-column:1 / -1;}
+  .similar-trades{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-left:2px solid var(--accent);
+    border-radius:2px;
+    padding:8px 10px;
+    font-size:11px;
+    color:var(--dim);
+    margin-bottom:10px;
+    letter-spacing:0.02em;
+  }
+  .similar-trades b{color:var(--ink);}
+  .trend-arrow{font-size:11px;margin-left:3px;}
+  .trend-arrow.up{color:var(--hit);}
+  .trend-arrow.down{color:var(--miss);}
+  .row-lesson{
+    font-size:9.5px;
+    color:var(--accent);
+    font-style:italic;
+    margin-top:2px;
+    letter-spacing:0.01em;
+  }
+  .corr-wrap{overflow-x:auto;}
+  .corr-table{border-collapse:collapse;width:100%;font-size:10.5px;}
+  .corr-table th, .corr-table td{
+    border:1px solid var(--line);
+    padding:5px 7px;
+    text-align:center;
+    white-space:nowrap;
+  }
+  .corr-table thead th{color:var(--dim);font-weight:600;}
+  .corr-table tbody th{color:var(--ink);font-weight:600;text-align:left;}
+  .corr-table td{color:var(--dim);}
+  .corr-table td.has-val{color:var(--accent);font-weight:600;}
   .rules-toggle{display:flex;gap:6px;}
   .rules-toggle button{
     flex:1;
@@ -650,7 +685,7 @@
 
   <div class="stats">
     <div class="stat"><div class="n" id="statTotal">0</div><div class="l">Trades</div></div>
-    <div class="stat hitcolor"><div class="n" id="statHitRate">—</div><div class="l">Hit Rate</div></div>
+    <div class="stat hitcolor"><div class="n"><span id="statHitRate">—</span><span id="hitRateTrend" class="trend-arrow"></span></div><div class="l">Hit Rate</div></div>
     <div class="stat"><div class="n" id="statAvgRR">—</div><div class="l">Avg R:R</div></div>
   </div>
   <div class="breakdown" id="breakdown"></div>
@@ -741,7 +776,12 @@
           <option>Other</option>
         </select>
       </div>
+      <div class="lesson-field">
+        <label id="lessonLabel">Lesson (optional)</label>
+        <input type="text" id="fLesson" placeholder="What would you do differently next time?" autocomplete="off">
+      </div>
     </div>
+    <div id="similarTrades" class="similar-trades" style="display:none;"></div>
     <button type="submit" class="addbtn" id="submitBtn">+ Add</button>
   </form>
   <p style="font-size:10px;color:var(--dim);margin:6px 2px 18px;">R:R format: <b style="color:var(--ink);">1:2</b> (risk:reward) — a plain number like <b style="color:var(--ink);">2</b> works too. Leave blank until known.</p>
@@ -925,6 +965,8 @@ const fMistake = document.getElementById('fMistake');
 const fEmotion = document.getElementById('fEmotion');
 const fSession = document.getElementById('fSession');
 const fSetup = document.getElementById('fSetup');
+const fLesson = document.getElementById('fLesson');
+const lessonLabel = document.getElementById('lessonLabel');
 const tagFilter = document.getElementById('tagFilter');
 const fabAdd = document.getElementById('fabAdd');
 const moreToggle = document.getElementById('moreToggle');
@@ -949,6 +991,39 @@ fabAdd.addEventListener('click', ()=>{
 });
 
 tagFilter.addEventListener('change', render);
+
+// prompt for a lesson specifically on loss/breakeven trades
+fResult.addEventListener('change', ()=>{
+  if(fResult.value === 'miss' || fResult.value === 'breakeven'){
+    lessonLabel.textContent = fResult.value === 'miss' ? 'Lesson — what would you do differently?' : 'Lesson (optional)';
+    setMoreOpen(true);
+    fLesson.focus();
+  } else {
+    lessonLabel.textContent = 'Lesson (optional)';
+  }
+});
+
+// similar past trades lookup as you type asset/setup
+function updateSimilarTrades(){
+  const el = document.getElementById('similarTrades');
+  const asset = fAsset.value.trim().toUpperCase();
+  const setup = fSetup.value.trim().toLowerCase();
+  if(!asset){ el.style.display = 'none'; return; }
+  let matches = trades.filter(t=> t.asset === asset && t.result !== 'pending');
+  let label = asset;
+  if(setup){
+    const setupMatches = matches.filter(t=> (t.setup||'').toLowerCase() === setup);
+    if(setupMatches.length){ matches = setupMatches; label = `${asset} · ${fSetup.value.trim()}`; }
+  }
+  if(matches.length === 0){ el.style.display = 'none'; return; }
+  const wins = matches.filter(t=>t.result==='hit').length;
+  const winLossCount = matches.filter(t=>t.result==='hit'||t.result==='miss').length;
+  const rate = winLossCount ? Math.round((wins/winLossCount)*100) : null;
+  el.innerHTML = `<b>${matches.length}</b> past trade${matches.length>1?'s':''} on <b>${escapeHtml(label)}</b>${rate!==null ? ` — ${rate}% win rate` : ''}`;
+  el.style.display = 'block';
+}
+fAsset.addEventListener('input', updateSimilarTrades);
+fSetup.addEventListener('input', updateSimilarTrades);
 
 // ---- settings (account size, risk %, weekly target) ----
 const SETTINGS_KEY = 'ledger_settings_v1';
@@ -1139,7 +1214,9 @@ function metaLine(t){
   else if(t.rulesFollowed === false) bits.push('<span class="rules-dot no"></span>rules');
   if(t.mistake) bits.push(escapeHtml(t.mistake));
   if(t.emotion) bits.push(escapeHtml(t.emotion));
-  return bits.length ? `<div class="row-meta">${bits.join(' · ')}</div>` : '';
+  let out = bits.length ? `<div class="row-meta">${bits.join(' · ')}</div>` : '';
+  if(t.lesson) out += `<div class="row-lesson">↳ ${escapeHtml(t.lesson)}</div>`;
+  return out;
 }
 
 function rowEl(t){
@@ -1223,6 +1300,7 @@ function updateStats(){
   checkBackupReminder();
   if(total === 0){
     document.getElementById('statHitRate').textContent = '—';
+    document.getElementById('hitRateTrend').innerHTML = '';
     document.getElementById('statAvgRR').textContent = '—';
     updateBreakdown();
     return;
@@ -1233,6 +1311,7 @@ function updateStats(){
   document.getElementById('statHitRate').textContent = resolved.length
     ? Math.round((hits/resolved.length)*100) + '%'
     : '—';
+  updateHitRateTrend();
 
   const rrVals = nonPending.map(t=>parseRR(t.rr)).filter(v=>v!==null);
   if(rrVals.length){
@@ -1242,6 +1321,30 @@ function updateStats(){
     document.getElementById('statAvgRR').textContent = '—';
   }
   updateBreakdown();
+}
+
+function monthWinRate(y, m){
+  const list = trades.filter(t=>{
+    if(t.result==='pending') return false;
+    const dt = new Date(t.date + 'T00:00:00');
+    return dt.getFullYear()===y && dt.getMonth()===m;
+  });
+  const winLoss = list.filter(t=>t.result==='hit'||t.result==='miss');
+  if(!winLoss.length) return null;
+  return Math.round((winLoss.filter(t=>t.result==='hit').length/winLoss.length)*100);
+}
+
+function updateHitRateTrend(){
+  const el = document.getElementById('hitRateTrend');
+  const now = new Date();
+  const thisRate = monthWinRate(now.getFullYear(), now.getMonth());
+  const lastMonthDate = new Date(now.getFullYear(), now.getMonth()-1, 1);
+  const lastRate = monthWinRate(lastMonthDate.getFullYear(), lastMonthDate.getMonth());
+  if(thisRate === null || lastRate === null){ el.innerHTML = ''; return; }
+  const diff = thisRate - lastRate;
+  if(diff > 0) el.innerHTML = `<span class="trend-arrow up">▲${diff}</span>`;
+  else if(diff < 0) el.innerHTML = `<span class="trend-arrow down">▼${Math.abs(diff)}</span>`;
+  else el.innerHTML = '';
 }
 
 function startOfWeek(d){
@@ -1490,6 +1593,21 @@ function computeReportData(periodFilter, customFrom, customTo, tagFilterVal){
     name, total:dowGroups[name].total, rate: Math.round((dowGroups[name].wins/dowGroups[name].total)*100)
   }));
 
+  // correlation: emotion x mistake cross-tab (count matrix)
+  const emotionsPresent = Array.from(new Set(nonPending.filter(t=>t.emotion).map(t=>t.emotion)));
+  const mistakesPresent = Array.from(new Set(nonPending.filter(t=>t.mistake).map(t=>t.mistake)));
+  let correlation = null;
+  if(emotionsPresent.length && mistakesPresent.length){
+    const grid = {};
+    nonPending.forEach(t=>{
+      if(t.emotion && t.mistake){
+        const key = t.emotion + '|' + t.mistake;
+        grid[key] = (grid[key]||0) + 1;
+      }
+    });
+    correlation = { emotions: emotionsPresent, mistakes: mistakesPresent, grid };
+  }
+
   // best/worst single trade by R
   let best = null, worst = null;
   nonPending.forEach(t=>{
@@ -1498,7 +1616,7 @@ function computeReportData(periodFilter, customFrom, customTo, tagFilterVal){
     if(worst === null || r < worst.r) worst = {t, r};
   });
 
-  return { total: list.length, hitRate, avgRR, longestStreak, longRate, shortRate, months, assets, rulePct, mistakes, sessions, equity, currentStreak, streakType, setups, dow, best, worst, profitFactor, expectancy, maxDrawdown };
+  return { total: list.length, hitRate, avgRR, longestStreak, longRate, shortRate, months, assets, rulePct, mistakes, sessions, equity, currentStreak, streakType, setups, dow, best, worst, profitFactor, expectancy, maxDrawdown, correlation };
 }
 
 function renderReport(){
@@ -1619,6 +1737,21 @@ function renderReport(){
     html += `</div></div>`;
   }
 
+  if(d.correlation){
+    const c = d.correlation;
+    html += `<div class="r-section"><div class="r-section-title">Emotion × Mistake</div>
+    <div class="corr-wrap"><table class="corr-table"><thead><tr><th></th>${c.mistakes.map(m=>`<th>${escapeHtml(m)}</th>`).join('')}</tr></thead><tbody>`;
+    c.emotions.forEach(em=>{
+      html += `<tr><th>${escapeHtml(em)}</th>`;
+      c.mistakes.forEach(m=>{
+        const count = c.grid[em+'|'+m] || 0;
+        html += `<td class="${count>0?'has-val':''}">${count>0?count:'—'}</td>`;
+      });
+      html += `</tr>`;
+    });
+    html += `</tbody></table></div></div>`;
+  }
+
   if(d.months.length){
     const maxRate = Math.max(...d.months.map(m=>m.rate), 1);
     html += `<div class="r-section">
@@ -1678,6 +1811,7 @@ document.getElementById('tradeForm').addEventListener('submit', function(e){
     mistake: fMistake.value,
     emotion: fEmotion.value,
     session: fSession.value,
+    lesson: fLesson.value.trim(),
     rulesFollowed: rulesFollowedState
   };
   if(editingId !== null){
@@ -1697,6 +1831,9 @@ document.getElementById('tradeForm').addEventListener('submit', function(e){
   fMistake.value = '';
   fEmotion.value = '';
   fSession.value = '';
+  fLesson.value = '';
+  lessonLabel.textContent = 'Lesson (optional)';
+  document.getElementById('similarTrades').style.display = 'none';
   setRulesFollowed(null);
   fAsset.focus();
   render();
@@ -1718,8 +1855,10 @@ function enterEditMode(id){
   fMistake.value = t.mistake || '';
   fEmotion.value = t.emotion || '';
   fSession.value = t.session || '';
+  fLesson.value = t.lesson || '';
+  lessonLabel.textContent = t.result === 'miss' ? 'Lesson — what would you do differently?' : 'Lesson (optional)';
   setRulesFollowed(t.rulesFollowed === undefined ? null : t.rulesFollowed);
-  if(t.mistake || t.emotion || t.session || t.setup || (t.rulesFollowed !== undefined && t.rulesFollowed !== null)){
+  if(t.mistake || t.emotion || t.session || t.setup || t.lesson || (t.rulesFollowed !== undefined && t.rulesFollowed !== null)){
     setMoreOpen(true);
   }
   fSerial.value = String(t.serial).padStart(3,'0');
@@ -1746,6 +1885,9 @@ document.getElementById('btnCancelEdit').addEventListener('click', ()=>{
   fMistake.value = '';
   fEmotion.value = '';
   fSession.value = '';
+  fLesson.value = '';
+  lessonLabel.textContent = 'Lesson (optional)';
+  document.getElementById('similarTrades').style.display = 'none';
   setRulesFollowed(null);
   render();
 });
@@ -1874,10 +2016,14 @@ document.getElementById('btnClear').addEventListener('click', ()=>{
 
 document.getElementById('btnCSV').addEventListener('click', ()=>{
   if(trades.length === 0) return;
-  let csv = 'Serial,Asset,Date,Direction,Result,R:R,Setup,Session,RulesFollowed,Mistake,Emotion\n';
+  const csvField = (v)=>{
+    const s = String(v==null?'':v);
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+  };
+  let csv = 'Serial,Asset,Date,Direction,Result,R:R,Setup,Session,RulesFollowed,Mistake,Emotion,Lesson\n';
   trades.forEach(t=>{
     const rf = t.rulesFollowed === true ? 'Yes' : (t.rulesFollowed === false ? 'No' : '');
-    csv += `${t.serial},${t.asset},${t.date},${t.dir},${t.result},${t.rr},${t.setup||''},${t.session||''},${rf},${t.mistake||''},${t.emotion||''}\n`;
+    csv += [t.serial,t.asset,t.date,t.dir,t.result,t.rr,t.setup||'',t.session||'',rf,t.mistake||'',t.emotion||'',t.lesson||''].map(csvField).join(',') + '\n';
   });
   const blob = new Blob([csv], {type:'text/csv'});
   const url = URL.createObjectURL(blob);
