@@ -303,6 +303,7 @@
   }
   .calc-box .more-toggle{border:none;padding:2px 0;margin:0;}
   .calc-box .more-fields{padding-top:10px;}
+  form .calc-box{grid-column:1 / -1;}
   .target-track{
     height:8px;
     background:var(--panel);
@@ -776,9 +777,14 @@
           <option>Other</option>
         </select>
       </div>
-      <div class="lesson-field">
-        <label id="lessonLabel">Lesson (optional)</label>
-        <input type="text" id="fLesson" placeholder="What would you do differently next time?" autocomplete="off">
+    </div>
+    <div class="calc-box" id="lessonBox">
+      <button type="button" class="more-toggle" id="lessonToggle">+ Add feedback / lesson</button>
+      <div class="more-fields hidden" id="lessonFields">
+        <div class="lesson-field">
+          <label>What would you do differently next time? (optional)</label>
+          <input type="text" id="fLesson" placeholder="e.g. waited for confirmation instead of chasing" autocomplete="off">
+        </div>
       </div>
     </div>
     <div id="similarTrades" class="similar-trades" style="display:none;"></div>
@@ -966,7 +972,6 @@ const fEmotion = document.getElementById('fEmotion');
 const fSession = document.getElementById('fSession');
 const fSetup = document.getElementById('fSetup');
 const fLesson = document.getElementById('fLesson');
-const lessonLabel = document.getElementById('lessonLabel');
 const tagFilter = document.getElementById('tagFilter');
 const fabAdd = document.getElementById('fabAdd');
 const moreToggle = document.getElementById('moreToggle');
@@ -992,16 +997,9 @@ fabAdd.addEventListener('click', ()=>{
 
 tagFilter.addEventListener('change', render);
 
-// prompt for a lesson specifically on loss/breakeven trades
-fResult.addEventListener('change', ()=>{
-  if(fResult.value === 'miss' || fResult.value === 'breakeven'){
-    lessonLabel.textContent = fResult.value === 'miss' ? 'Lesson — what would you do differently?' : 'Lesson (optional)';
-    setMoreOpen(true);
-    fLesson.focus();
-  } else {
-    lessonLabel.textContent = 'Lesson (optional)';
-  }
-});
+const lessonToggle = document.getElementById('lessonToggle');
+const lessonFields = document.getElementById('lessonFields');
+lessonToggle.addEventListener('click', ()=> lessonFields.classList.toggle('hidden'));
 
 // similar past trades lookup as you type asset/setup
 function updateSimilarTrades(){
@@ -1832,7 +1830,6 @@ document.getElementById('tradeForm').addEventListener('submit', function(e){
   fEmotion.value = '';
   fSession.value = '';
   fLesson.value = '';
-  lessonLabel.textContent = 'Lesson (optional)';
   document.getElementById('similarTrades').style.display = 'none';
   setRulesFollowed(null);
   fAsset.focus();
@@ -1856,10 +1853,12 @@ function enterEditMode(id){
   fEmotion.value = t.emotion || '';
   fSession.value = t.session || '';
   fLesson.value = t.lesson || '';
-  lessonLabel.textContent = t.result === 'miss' ? 'Lesson — what would you do differently?' : 'Lesson (optional)';
   setRulesFollowed(t.rulesFollowed === undefined ? null : t.rulesFollowed);
-  if(t.mistake || t.emotion || t.session || t.setup || t.lesson || (t.rulesFollowed !== undefined && t.rulesFollowed !== null)){
+  if(t.mistake || t.emotion || t.session || t.setup || (t.rulesFollowed !== undefined && t.rulesFollowed !== null)){
     setMoreOpen(true);
+  }
+  if(t.lesson){
+    lessonFields.classList.remove('hidden');
   }
   fSerial.value = String(t.serial).padStart(3,'0');
   document.getElementById('submitBtn').textContent = '✓ Update';
@@ -1886,7 +1885,6 @@ document.getElementById('btnCancelEdit').addEventListener('click', ()=>{
   fEmotion.value = '';
   fSession.value = '';
   fLesson.value = '';
-  lessonLabel.textContent = 'Lesson (optional)';
   document.getElementById('similarTrades').style.display = 'none';
   setRulesFollowed(null);
   render();
