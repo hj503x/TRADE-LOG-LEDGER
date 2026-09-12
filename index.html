@@ -148,6 +148,11 @@
     cursor:pointer;
     border-radius:2px;
   }
+  input:focus-visible, select:focus-visible, button:focus-visible,
+  [role="button"]:focus-visible{
+    outline:2px solid var(--accent);
+    outline-offset:1px;
+  }
   .addbtn{
     align-self:end;
     background:var(--accent);
@@ -549,18 +554,6 @@
   }
   .more-fields.hidden{display:none;}
   .lesson-field{grid-column:1 / -1;}
-  .similar-trades{
-    background:var(--panel);
-    border:1px solid var(--line);
-    border-left:2px solid var(--accent);
-    border-radius:2px;
-    padding:8px 10px;
-    font-size:11px;
-    color:var(--dim);
-    margin-bottom:10px;
-    letter-spacing:0.02em;
-  }
-  .similar-trades b{color:var(--ink);}
   .trend-arrow{font-size:11px;margin-left:3px;}
   .trend-arrow.up{color:var(--hit);}
   .trend-arrow.down{color:var(--miss);}
@@ -680,7 +673,7 @@
     <h1>LEDGER<span>_</span> TRADE LOG</h1>
     <div style="display:flex;align-items:center;gap:10px;">
       <div class="sub" id="dateNow"></div>
-      <button id="themeToggle" class="theme-toggle" title="Toggle light/dark theme">☾</button>
+      <button id="themeToggle" class="theme-toggle" title="Toggle light/dark theme" aria-label="Toggle light/dark theme">☾</button>
     </div>
   </header>
 
@@ -696,26 +689,26 @@
 
   <form id="tradeForm">
     <div class="f-serial">
-      <label>No.</label>
+      <label for="fSerial">No.</label>
       <input type="text" id="fSerial" readonly>
     </div>
     <div class="f-asset">
-      <label>Asset</label>
+      <label for="fAsset">Asset</label>
       <input type="text" id="fAsset" placeholder="XAUUSD" required autocomplete="off">
     </div>
     <div class="f-date">
-      <label>Date</label>
+      <label for="fDate">Date</label>
       <input type="date" id="fDate" required>
     </div>
     <div class="f-dir">
-      <label>Dir</label>
+      <label for="fDir">Dir</label>
       <select id="fDir">
         <option value="long">Long</option>
         <option value="short">Short</option>
       </select>
     </div>
     <div class="f-result">
-      <label>Result</label>
+      <label for="fResult">Result</label>
       <select id="fResult">
         <option value="pending" selected>Pending</option>
         <option value="hit">Hit</option>
@@ -724,24 +717,24 @@
       </select>
     </div>
     <div class="f-rr">
-      <label>R:R</label>
+      <label for="fRR">R:R</label>
       <input type="text" id="fRR" placeholder="1:2" autocomplete="off">
     </div>
     <button type="button" class="more-toggle" id="moreToggle">+ Rules / Mistake / Emotion / Session</button>
     <div class="more-fields" id="moreFields">
       <div>
-        <label>Setup</label>
+        <label for="fSetup">Setup</label>
         <input type="text" id="fSetup" placeholder="breakout, pullback" autocomplete="off">
       </div>
       <div>
-        <label>Rules followed?</label>
-        <div class="rules-toggle">
+        <label id="rulesLabel">Rules followed?</label>
+        <div class="rules-toggle" role="group" aria-labelledby="rulesLabel">
           <button type="button" id="rulesYes">Yes</button>
           <button type="button" id="rulesNo">No</button>
         </div>
       </div>
       <div>
-        <label>Mistake</label>
+        <label for="fMistake">Mistake</label>
         <select id="fMistake">
           <option value="">None</option>
           <option>Oversized</option>
@@ -752,9 +745,10 @@
           <option>Ignored plan</option>
           <option>Other</option>
         </select>
+        <input type="text" id="fMistakeOther" placeholder="Specify mistake" autocomplete="off" style="margin-top:6px;display:none;" aria-label="Specify mistake">
       </div>
       <div>
-        <label>Emotion</label>
+        <label for="fEmotion">Emotion</label>
         <select id="fEmotion">
           <option value="">—</option>
           <option>Calm</option>
@@ -765,9 +759,10 @@
           <option>Anxious</option>
           <option>Other</option>
         </select>
+        <input type="text" id="fEmotionOther" placeholder="Specify emotion" autocomplete="off" style="margin-top:6px;display:none;" aria-label="Specify emotion">
       </div>
       <div>
-        <label>Session</label>
+        <label for="fSession">Session</label>
         <select id="fSession">
           <option value="">—</option>
           <option>London</option>
@@ -782,12 +777,11 @@
       <button type="button" class="more-toggle" id="lessonToggle">+ Add feedback / lesson</button>
       <div class="more-fields hidden" id="lessonFields">
         <div class="lesson-field">
-          <label>What would you do differently next time? (optional)</label>
+          <label for="fLesson">What would you do differently next time? (optional)</label>
           <input type="text" id="fLesson" placeholder="e.g. waited for confirmation instead of chasing" autocomplete="off">
         </div>
       </div>
     </div>
-    <div id="similarTrades" class="similar-trades" style="display:none;"></div>
     <button type="submit" class="addbtn" id="submitBtn">+ Add</button>
   </form>
   <p style="font-size:10px;color:var(--dim);margin:6px 2px 18px;">R:R format: <b style="color:var(--ink);">1:2</b> (risk:reward) — a plain number like <b style="color:var(--ink);">2</b> works too. Leave blank until known.</p>
@@ -796,19 +790,19 @@
     <button type="button" class="more-toggle" id="calcToggle">+ Position size calculator</button>
     <div class="more-fields hidden" id="calcFields">
       <div>
-        <label>Account size</label>
+        <label for="calcAccount">Account size</label>
         <input type="number" id="calcAccount" placeholder="e.g. 1000">
       </div>
       <div>
-        <label>Risk %</label>
+        <label for="calcRiskPct">Risk %</label>
         <input type="number" step="0.1" id="calcRiskPct" placeholder="e.g. 1">
       </div>
       <div>
-        <label>Stop distance (price units)</label>
+        <label for="calcStop">Stop distance (price units)</label>
         <input type="number" step="0.0001" id="calcStop" placeholder="e.g. 5.5">
       </div>
       <div>
-        <label>Suggested size</label>
+        <label for="calcResult">Suggested size</label>
         <input type="text" id="calcResult" readonly placeholder="—">
       </div>
     </div>
@@ -818,7 +812,7 @@
     <button type="button" class="more-toggle" id="targetToggle">+ Weekly R target</button>
     <div class="more-fields hidden" id="targetFields">
       <div>
-        <label>Weekly target (R)</label>
+        <label for="fWeeklyTarget">Weekly target (R)</label>
         <input type="number" step="0.5" id="fWeeklyTarget" placeholder="e.g. 5">
       </div>
     </div>
@@ -830,13 +824,13 @@
   <div id="streakBanner" style="display:none;"></div>
 
   <div class="toolbar">
-    <input type="text" id="searchBox" placeholder="Search asset...">
-    <select id="sortSelect">
+    <input type="text" id="searchBox" placeholder="Search asset..." aria-label="Search by asset">
+    <select id="sortSelect" aria-label="Sort trades">
       <option value="newest">Newest first</option>
       <option value="oldest">Oldest first</option>
       <option value="asset">Asset A–Z</option>
     </select>
-    <select id="tagFilter">
+    <select id="tagFilter" aria-label="Filter trades">
       <option value="">All trades</option>
       <optgroup label="Rules">
         <option value="rules:yes">Rules followed</option>
@@ -969,6 +963,14 @@ const searchBox = document.getElementById('searchBox');
 const sortSelect = document.getElementById('sortSelect');
 const fMistake = document.getElementById('fMistake');
 const fEmotion = document.getElementById('fEmotion');
+const fMistakeOther = document.getElementById('fMistakeOther');
+const fEmotionOther = document.getElementById('fEmotionOther');
+fMistake.addEventListener('change', ()=>{
+  fMistakeOther.style.display = fMistake.value === 'Other' ? 'block' : 'none';
+});
+fEmotion.addEventListener('change', ()=>{
+  fEmotionOther.style.display = fEmotion.value === 'Other' ? 'block' : 'none';
+});
 const fSession = document.getElementById('fSession');
 const fSetup = document.getElementById('fSetup');
 const fLesson = document.getElementById('fLesson');
@@ -1000,28 +1002,6 @@ tagFilter.addEventListener('change', render);
 const lessonToggle = document.getElementById('lessonToggle');
 const lessonFields = document.getElementById('lessonFields');
 lessonToggle.addEventListener('click', ()=> lessonFields.classList.toggle('hidden'));
-
-// similar past trades lookup as you type asset/setup
-function updateSimilarTrades(){
-  const el = document.getElementById('similarTrades');
-  const asset = fAsset.value.trim().toUpperCase();
-  const setup = fSetup.value.trim().toLowerCase();
-  if(!asset){ el.style.display = 'none'; return; }
-  let matches = trades.filter(t=> t.asset === asset && t.result !== 'pending');
-  let label = asset;
-  if(setup){
-    const setupMatches = matches.filter(t=> (t.setup||'').toLowerCase() === setup);
-    if(setupMatches.length){ matches = setupMatches; label = `${asset} · ${fSetup.value.trim()}`; }
-  }
-  if(matches.length === 0){ el.style.display = 'none'; return; }
-  const wins = matches.filter(t=>t.result==='hit').length;
-  const winLossCount = matches.filter(t=>t.result==='hit'||t.result==='miss').length;
-  const rate = winLossCount ? Math.round((wins/winLossCount)*100) : null;
-  el.innerHTML = `<b>${matches.length}</b> past trade${matches.length>1?'s':''} on <b>${escapeHtml(label)}</b>${rate!==null ? ` — ${rate}% win rate` : ''}`;
-  el.style.display = 'block';
-}
-fAsset.addEventListener('input', updateSimilarTrades);
-fSetup.addEventListener('input', updateSimilarTrades);
 
 // ---- settings (account size, risk %, weekly target) ----
 const SETTINGS_KEY = 'ledger_settings_v1';
@@ -1078,13 +1058,20 @@ document.getElementById('btnHomeScreen').addEventListener('click', ()=>{
 
 // ---- backup reminder ----
 const BACKUP_KEY = 'ledger_last_backup';
+const BACKUP_COUNT_KEY = 'ledger_last_backup_count';
+const BACKUP_TRADE_THRESHOLD = 10;
 function checkBackupReminder(){
   const el = document.getElementById('backupReminder');
   if(trades.length === 0){ el.style.display='none'; return; }
   const last = localStorage.getItem(BACKUP_KEY);
   const days = last ? Math.floor((Date.now() - Number(last)) / 86400000) : null;
+  const lastCount = Number(localStorage.getItem(BACKUP_COUNT_KEY) || 0);
+  const newTrades = trades.length - lastCount;
   if(days === null){
     el.textContent = 'No backup on record yet — tap Backup JSON to save a copy.';
+    el.style.display = 'block';
+  } else if(newTrades >= BACKUP_TRADE_THRESHOLD){
+    el.textContent = `${newTrades} trades logged since your last backup — consider tapping Backup JSON.`;
     el.style.display = 'block';
   } else if(days >= 7){
     el.textContent = `Last backup was ${days} days ago — consider tapping Backup JSON.`;
@@ -1225,13 +1212,13 @@ function rowEl(t){
     <td>${escapeHtml(t.asset)}${metaLine(t)}</td>
     <td class="num">${formatDate(t.date)}</td>
     <td><span class="tag ${t.dir}">${t.dir}</span></td>
-    <td><span class="tag ${t.result} result-tag" data-id="${t.id}" title="Tap to update">${symbolFor(t.result)} ${t.result}</span></td>
-    <td class="rr rr-edit" data-id="${t.id}" title="Tap to set R:R">${t.rr ? escapeHtml(t.rr) : '—'}</td>
+    <td><span class="tag ${t.result} result-tag" data-id="${t.id}" title="Tap to update" role="button" tabindex="0" aria-label="Trade result: ${t.result}. Tap to cycle.">${symbolFor(t.result)} ${t.result}</span></td>
+    <td class="rr rr-edit" data-id="${t.id}" title="Tap to set R:R" role="button" tabindex="0" aria-label="Risk to reward ${t.rr ? escapeHtml(t.rr) : 'not set'}. Tap to edit.">${t.rr ? escapeHtml(t.rr) : '—'}</td>
     <td>
       <div class="row-actions">
-        <button class="dup" data-id="${t.id}" title="Duplicate">⧉</button>
-        <button class="edit" data-id="${t.id}" title="Edit">✎</button>
-        <button class="del" data-id="${t.id}" title="Delete">✕</button>
+        <button class="dup" data-id="${t.id}" title="Duplicate" aria-label="Duplicate trade ${escapeHtml(t.asset)}">⧉</button>
+        <button class="edit" data-id="${t.id}" title="Edit" aria-label="Edit trade ${escapeHtml(t.asset)}">✎</button>
+        <button class="del" data-id="${t.id}" title="Delete" aria-label="Delete trade ${escapeHtml(t.asset)}">✕</button>
       </div>
     </td>
   `;
@@ -1443,7 +1430,8 @@ function computeReportData(periodFilter, customFrom, customTo, tagFilterVal){
       return dt.getFullYear() === y && dt.getMonth() === m;
     });
   } else if(periodFilter === 'custom' && customFrom && customTo){
-    list = trades.filter(t=> t.date >= customFrom && t.date <= customTo);
+    const [lo, hi] = customFrom <= customTo ? [customFrom, customTo] : [customTo, customFrom];
+    list = trades.filter(t=> t.date >= lo && t.date <= hi);
   }
 
   if(tagFilterVal){
@@ -1806,12 +1794,13 @@ document.getElementById('tradeForm').addEventListener('submit', function(e){
     result: fResult.value,
     rr: formatRRInput(fRR.value),
     setup: fSetup.value.trim(),
-    mistake: fMistake.value,
-    emotion: fEmotion.value,
+    mistake: fMistake.value === 'Other' && fMistakeOther.value.trim() ? fMistakeOther.value.trim() : fMistake.value,
+    emotion: fEmotion.value === 'Other' && fEmotionOther.value.trim() ? fEmotionOther.value.trim() : fEmotion.value,
     session: fSession.value,
     lesson: fLesson.value.trim(),
     rulesFollowed: rulesFollowedState
   };
+  const wasEditing = editingId !== null;
   if(editingId !== null){
     const t = trades.find(tr=>tr.id === editingId);
     if(t) Object.assign(t, data);
@@ -1820,6 +1809,7 @@ document.getElementById('tradeForm').addEventListener('submit', function(e){
     trades.push({ id: Date.now(), serial: nextSerial(), ...data });
   }
   save();
+  showToast(wasEditing ? 'Trade updated' : 'Trade added', null, 1800);
   fAsset.value = '';
   fRR.value = '';
   fDate.valueAsDate = new Date();
@@ -1827,10 +1817,13 @@ document.getElementById('tradeForm').addEventListener('submit', function(e){
   fResult.value = 'pending';
   fSetup.value = '';
   fMistake.value = '';
+  fMistakeOther.value = '';
+  fMistakeOther.style.display = 'none';
   fEmotion.value = '';
+  fEmotionOther.value = '';
+  fEmotionOther.style.display = 'none';
   fSession.value = '';
   fLesson.value = '';
-  document.getElementById('similarTrades').style.display = 'none';
   setRulesFollowed(null);
   fAsset.focus();
   render();
@@ -1849,8 +1842,26 @@ function enterEditMode(id){
   fResult.value = t.result;
   fRR.value = t.rr || '';
   fSetup.value = t.setup || '';
-  fMistake.value = t.mistake || '';
-  fEmotion.value = t.emotion || '';
+  const mistakeOptions = Array.from(fMistake.options).map(o=>o.value);
+  if(t.mistake && !mistakeOptions.includes(t.mistake)){
+    fMistake.value = 'Other';
+    fMistakeOther.value = t.mistake;
+    fMistakeOther.style.display = 'block';
+  } else {
+    fMistake.value = t.mistake || '';
+    fMistakeOther.value = '';
+    fMistakeOther.style.display = 'none';
+  }
+  const emotionOptions = Array.from(fEmotion.options).map(o=>o.value);
+  if(t.emotion && !emotionOptions.includes(t.emotion)){
+    fEmotion.value = 'Other';
+    fEmotionOther.value = t.emotion;
+    fEmotionOther.style.display = 'block';
+  } else {
+    fEmotion.value = t.emotion || '';
+    fEmotionOther.value = '';
+    fEmotionOther.style.display = 'none';
+  }
   fSession.value = t.session || '';
   fLesson.value = t.lesson || '';
   setRulesFollowed(t.rulesFollowed === undefined ? null : t.rulesFollowed);
@@ -1882,10 +1893,13 @@ document.getElementById('btnCancelEdit').addEventListener('click', ()=>{
   fResult.value = 'pending';
   fSetup.value = '';
   fMistake.value = '';
+  fMistakeOther.value = '';
+  fMistakeOther.style.display = 'none';
   fEmotion.value = '';
+  fEmotionOther.value = '';
+  fEmotionOther.style.display = 'none';
   fSession.value = '';
   fLesson.value = '';
-  document.getElementById('similarTrades').style.display = 'none';
   setRulesFollowed(null);
   render();
 });
@@ -1898,6 +1912,8 @@ tbody.addEventListener('click', function(e){
       fAsset.value = t.asset;
       fDir.value = t.dir;
       fRR.value = t.rr || '';
+      fSetup.value = t.setup || '';
+      fSession.value = t.session || '';
       fDate.valueAsDate = new Date();
       fResult.value = 'pending';
       window.scrollTo({top:0, behavior:'smooth'});
@@ -1945,6 +1961,13 @@ tbody.addEventListener('click', function(e){
   }
 });
 
+tbody.addEventListener('keydown', function(e){
+  if((e.key === 'Enter' || e.key === ' ') && e.target.getAttribute('role') === 'button'){
+    e.preventDefault();
+    e.target.click();
+  }
+});
+
 document.getElementById('btnPrint').addEventListener('click', ()=>{
   const includeReport = confirm('Include the report summary along with your trade data?\n\nOK = Include report\nCancel = Data only');
   document.body.classList.add('pr-data');
@@ -1988,27 +2011,42 @@ window.addEventListener('afterprint', ()=>{
 });
 
 let toastTimer = null;
-function showUndoToast(deletedTrade, deletedIndex){
+function showToast(message, onUndo, duration){
   const toast = document.getElementById('toast');
-  toast.innerHTML = 'Trade deleted <button id="undoBtn">Undo</button>';
+  toast.innerHTML = onUndo ? `${message} <button id="undoBtn">Undo</button>` : message;
   toast.style.display = 'flex';
   clearTimeout(toastTimer);
-  document.getElementById('undoBtn').onclick = function(){
+  if(onUndo){
+    document.getElementById('undoBtn').onclick = function(){
+      onUndo();
+      toast.style.display = 'none';
+      clearTimeout(toastTimer);
+    };
+  }
+  toastTimer = setTimeout(()=>{ toast.style.display = 'none'; }, duration || 3000);
+}
+
+function showUndoToast(deletedTrade, deletedIndex){
+  showToast('Trade deleted', ()=>{
     trades.splice(deletedIndex, 0, deletedTrade);
     trades.forEach((t,i)=>t.serial = i+1);
     save();
     render();
-    toast.style.display = 'none';
-    clearTimeout(toastTimer);
-  };
-  toastTimer = setTimeout(()=>{ toast.style.display = 'none'; }, 3000);
+  });
 }
 
 document.getElementById('btnClear').addEventListener('click', ()=>{
-  if(confirm('Clear all logged trades? This cannot be undone.')){
+  if(trades.length === 0) return;
+  if(confirm(`Clear all ${trades.length} logged trades? You'll get a brief chance to undo.`)){
+    const cleared = trades;
     trades = [];
     save();
     render();
+    showToast(`${cleared.length} trades cleared`, ()=>{
+      trades = cleared;
+      save();
+      render();
+    }, 6000);
   }
 });
 
@@ -2045,6 +2083,7 @@ document.getElementById('btnJSONExport').addEventListener('click', ()=>{
   a.click();
   URL.revokeObjectURL(url);
   localStorage.setItem(BACKUP_KEY, String(Date.now()));
+  localStorage.setItem(BACKUP_COUNT_KEY, String(trades.length));
   checkBackupReminder();
 });
 
@@ -2107,7 +2146,9 @@ function applyTheme(theme){
   document.getElementById('themeToggle').textContent = theme === 'light' ? '☀' : '☾';
   localStorage.setItem(THEME_KEY, theme);
 }
-applyTheme(localStorage.getItem(THEME_KEY) || 'dark');
+const savedTheme = localStorage.getItem(THEME_KEY);
+const systemPrefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+applyTheme(savedTheme || (systemPrefersLight ? 'light' : 'dark'));
 document.getElementById('themeToggle').addEventListener('click', ()=>{
   const current = document.documentElement.getAttribute('data-theme') || 'dark';
   applyTheme(current === 'dark' ? 'light' : 'dark');
