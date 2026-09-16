@@ -96,7 +96,8 @@
   .stat:last-child{border-right:none;}
   .stat .n{font-size:17px;font-weight:600;color:var(--ink);}
   .stat .l{font-size:9px;color:var(--dim);letter-spacing:0.12em;text-transform:uppercase;margin-top:2px;}
-  .stat.hitcolor .n{color:var(--hit);}
+  .stat.hitcolor .n{color:var(--hit);font-size:20px;}
+  .stat.hitcolor.below .n{color:var(--miss);}
 
   .breakdown{
     font-size:10px;
@@ -141,6 +142,12 @@
   }
   input:focus, select:focus{border-color:var(--accent);}
   input[readonly]{color:var(--dim);}
+  .rr-inputs{display:flex;align-items:center;gap:4px;}
+  .rr-inputs input{width:100%;min-width:0;text-align:center;padding:7px 2px;}
+  .rr-inputs span{color:var(--dim);font-size:11px;flex-shrink:0;}
+  .tools-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .tools-grid .lesson-field{grid-column:1 / -1;}
+  @media (max-width:640px){ .tools-grid{grid-template-columns:1fr 1fr;} }
   button{
     font-family:var(--mono);
     font-size:11px;
@@ -205,10 +212,13 @@
   .tag.breakeven{color:var(--accent);border-color:var(--accent);}
   .tag.pending{color:var(--dim);border-color:var(--dim);}
   .tag.result-tag{cursor:pointer;}
+  .tag.result-tag::after{content:'⟲';font-size:9px;margin-left:4px;opacity:0.55;}
   .tag.result-tag:hover{opacity:0.75;}
+  .tag.result-tag:active{opacity:0.55;}
   .rr{color:var(--accent);}
-  .rr-edit{cursor:pointer;}
+  .rr-edit{cursor:pointer;border-bottom:1px dotted var(--dim);}
   .rr-edit:hover{opacity:0.75;}
+  .rr-edit:active{opacity:0.55;}
   .del{
     background:none;
     border:none;
@@ -619,7 +629,50 @@
     .f-rr{grid-column:1 / span 2;}
     .more-fields{grid-template-columns:1fr 1fr;}
     .addbtn{grid-column:1 / span 2;padding:12px 0;}
-    table{display:block;overflow-x:auto;}
+
+    /* card layout for the trade log on narrow screens instead of a scrolling table */
+    table{display:block;}
+    thead{display:none;}
+    tbody{display:block;}
+    tbody tr{display:block;}
+    tbody tr.month-row{
+      background:transparent;
+      padding:4px 2px;
+      margin-bottom:4px;
+    }
+    tbody tr.month-row td{padding:4px 2px;}
+    tbody tr:not(.month-row){
+      display:grid;
+      grid-template-columns:1fr auto;
+      grid-template-areas:
+        "asset  result"
+        "datedir rr"
+        "actions actions";
+      row-gap:6px;
+      column-gap:10px;
+      border:1px solid var(--line);
+      border-radius:5px;
+      padding:11px 12px 9px;
+      margin-bottom:8px;
+      background:var(--panel);
+    }
+    tbody tr.row-pending{border-left:2px solid var(--accent);}
+    tbody tr.row-pending td:first-child{border-left:none;}
+    tbody tr:not(.month-row) td{
+      display:block;
+      border-bottom:none;
+      padding:0;
+      white-space:normal;
+    }
+    tbody tr:not(.month-row) td:nth-child(1){display:none;}
+    tbody tr:not(.month-row) td:nth-child(2){grid-area:asset;font-weight:600;}
+    tbody tr:not(.month-row) td:nth-child(3){grid-area:datedir;color:var(--dim);font-size:11px;align-self:start;}
+    tbody tr:not(.month-row) td:nth-child(4){grid-area:result;justify-self:end;text-align:right;}
+    tbody tr:not(.month-row) td:nth-child(5){grid-area:rr;justify-self:end;text-align:right;}
+    tbody tr:not(.month-row) td:nth-child(6){grid-area:actions;justify-self:end;}
+    tbody tr:not(.month-row) .row-actions{justify-content:flex-end;}
+    tbody tr:not(.month-row) .row-actions button{padding:9px 9px;}
+    .tag.result-tag, .rr-edit{padding:3px 2px;}
   }
 
   @media print{
@@ -673,13 +726,14 @@
     <h1>LEDGER<span>_</span> TRADE LOG</h1>
     <div style="display:flex;align-items:center;gap:10px;">
       <div class="sub" id="dateNow"></div>
+      <button id="toolsToggle" class="theme-toggle" title="Position size calculator & weekly target" aria-label="Open tools panel">⚙</button>
       <button id="themeToggle" class="theme-toggle" title="Toggle light/dark theme" aria-label="Toggle light/dark theme">☾</button>
     </div>
   </header>
 
   <div class="stats">
     <div class="stat"><div class="n" id="statTotal">0</div><div class="l">Trades</div></div>
-    <div class="stat hitcolor"><div class="n"><span id="statHitRate">—</span><span id="hitRateTrend" class="trend-arrow"></span></div><div class="l">Hit Rate</div></div>
+    <div class="stat hitcolor" id="statHitRateBox"><div class="n"><span id="statHitRate">—</span><span id="hitRateTrend" class="trend-arrow"></span></div><div class="l">Hit Rate</div></div>
     <div class="stat"><div class="n" id="statAvgRR">—</div><div class="l">Avg R:R</div></div>
   </div>
   <div class="breakdown" id="breakdown"></div>
@@ -717,8 +771,13 @@
       </select>
     </div>
     <div class="f-rr">
-      <label for="fRR">R:R</label>
-      <input type="text" id="fRR" placeholder="1:2" autocomplete="off">
+      <label for="fRRReward">R:R</label>
+      <div class="rr-inputs">
+        <input type="number" id="fRRRisk" value="1" min="0" step="0.1" aria-label="Risk (defaults to 1)">
+        <span>:</span>
+        <input type="number" id="fRRReward" placeholder="2" min="0" step="0.1" aria-label="Reward">
+      </div>
+      <input type="hidden" id="fRR">
     </div>
     <button type="button" class="more-toggle" id="moreToggle">+ Rules / Mistake / Emotion / Session</button>
     <div class="more-fields" id="moreFields">
@@ -784,43 +843,8 @@
     </div>
     <button type="submit" class="addbtn" id="submitBtn">+ Add</button>
   </form>
-  <p style="font-size:10px;color:var(--dim);margin:6px 2px 18px;">R:R format: <b style="color:var(--ink);">1:2</b> (risk:reward) — a plain number like <b style="color:var(--ink);">2</b> works too. Leave blank until known.</p>
+  <p style="font-size:10px;color:var(--dim);margin:6px 2px 18px;">Risk defaults to <b style="color:var(--ink);">1</b> — just fill in the reward (e.g. <b style="color:var(--ink);">2</b> for a 1:2 setup). Leave blank until known.</p>
 
-  <div class="calc-box" id="calcBox">
-    <button type="button" class="more-toggle" id="calcToggle">+ Position size calculator</button>
-    <div class="more-fields hidden" id="calcFields">
-      <div>
-        <label for="calcAccount">Account size</label>
-        <input type="number" id="calcAccount" placeholder="e.g. 1000">
-      </div>
-      <div>
-        <label for="calcRiskPct">Risk %</label>
-        <input type="number" step="0.1" id="calcRiskPct" placeholder="e.g. 1">
-      </div>
-      <div>
-        <label for="calcStop">Stop distance (price units)</label>
-        <input type="number" step="0.0001" id="calcStop" placeholder="e.g. 5.5">
-      </div>
-      <div>
-        <label for="calcLotSize">Contract/lot size</label>
-        <input type="number" id="calcLotSize" placeholder="e.g. 100000">
-      </div>
-      <div class="lesson-field">
-        <label for="calcResult">Suggested size</label>
-        <input type="text" id="calcResult" readonly placeholder="Enter account size, risk %, and stop distance">
-      </div>
-    </div>
-  </div>
-
-  <div class="calc-box" id="targetBox">
-    <button type="button" class="more-toggle" id="targetToggle">+ Weekly R target</button>
-    <div class="more-fields hidden" id="targetFields">
-      <div>
-        <label for="fWeeklyTarget">Weekly target (R)</label>
-        <input type="number" step="0.5" id="fWeeklyTarget" placeholder="e.g. 5">
-      </div>
-    </div>
-  </div>
   <div id="editBar" style="display:none;margin:-10px 0 18px;">
     <button id="btnCancelEdit" style="background:transparent;border:1px solid var(--line);color:var(--dim);padding:6px 12px;font-family:var(--mono);font-size:11px;border-radius:2px;cursor:pointer;">Cancel edit</button>
   </div>
@@ -872,8 +896,7 @@
       <tr>
         <th>No.</th>
         <th>Asset</th>
-        <th>Date</th>
-        <th>Dir</th>
+        <th>Date / Dir</th>
         <th>Result</th>
         <th>R:R</th>
         <th></th>
@@ -950,6 +973,54 @@
     </div>
   </div>
 </div>
+<div id="toolsOverlay" class="report-overlay" style="display:none;">
+  <div class="report-panel" style="max-width:420px;">
+    <div class="report-head">
+      <h2>LEDGER<span>_</span> TOOLS</h2>
+      <button id="btnCloseTools" class="report-close" aria-label="Close tools panel">✕</button>
+    </div>
+    <div class="r-section">
+      <div class="r-section-title">Position size calculator</div>
+      <div class="tools-grid">
+        <div>
+          <label for="calcAccount">Account size</label>
+          <input type="number" id="calcAccount" placeholder="e.g. 1000">
+        </div>
+        <div>
+          <label for="calcRiskPct">Risk %</label>
+          <input type="number" step="0.1" id="calcRiskPct" placeholder="e.g. 1">
+        </div>
+        <div>
+          <label for="calcStop">Stop distance (price units)</label>
+          <input type="number" step="0.0001" id="calcStop" placeholder="e.g. 5.5">
+        </div>
+        <div>
+          <label for="calcLotSize">Contract/lot size</label>
+          <input type="number" id="calcLotSize" placeholder="e.g. 100000">
+        </div>
+        <div class="lesson-field">
+          <label for="calcResult">Suggested size</label>
+          <input type="text" id="calcResult" readonly placeholder="Enter account size, risk %, and stop distance">
+        </div>
+      </div>
+    </div>
+    <div class="r-section" style="margin-bottom:0;">
+      <div class="r-section-title">Weekly R target</div>
+      <label for="fWeeklyTarget">Target (R)</label>
+      <input type="number" step="0.5" id="fWeeklyTarget" placeholder="e.g. 5">
+    </div>
+  </div>
+</div>
+<div id="appModal" class="report-overlay" style="display:none;z-index:70;">
+  <div class="report-panel" style="max-width:360px;padding:18px;">
+    <div class="modal-message" id="modalMessage" style="font-size:12px;line-height:1.6;margin-bottom:16px;white-space:pre-line;"></div>
+    <input type="text" id="modalInput" style="display:none;margin-bottom:14px;">
+    <div class="modal-actions" style="display:flex;gap:8px;justify-content:flex-end;">
+      <button id="modalCancel" style="background:transparent;border:1px solid var(--line);color:var(--dim);padding:8px 14px;font-family:var(--mono);font-size:11px;border-radius:2px;cursor:pointer;">Cancel</button>
+      <button id="modalOk" class="addbtn" style="padding:8px 16px;">OK</button>
+    </div>
+  </div>
+</div>
 <div id="toast" class="toast" style="display:none;"></div>
 
 <script>
@@ -965,6 +1036,28 @@ const fDate = document.getElementById('fDate');
 const fDir = document.getElementById('fDir');
 const fResult = document.getElementById('fResult');
 const fRR = document.getElementById('fRR');
+const fRRRisk = document.getElementById('fRRRisk');
+const fRRReward = document.getElementById('fRRReward');
+function syncRRFromInputs(){
+  const risk = fRRRisk.value.trim();
+  const reward = fRRReward.value.trim();
+  fRR.value = reward ? (risk || '1') + ':' + reward : '';
+}
+function syncInputsFromRR(str){
+  const s = String(str || '').trim();
+  fRR.value = s;
+  if(!s){ fRRRisk.value = '1'; fRRReward.value = ''; return; }
+  if(s.includes(':')){
+    const parts = s.split(':');
+    fRRRisk.value = parts[0] || '1';
+    fRRReward.value = parts[1] || '';
+  } else {
+    fRRRisk.value = '1';
+    fRRReward.value = s;
+  }
+}
+fRRRisk.addEventListener('input', syncRRFromInputs);
+fRRReward.addEventListener('input', syncRRFromInputs);
 const searchBox = document.getElementById('searchBox');
 const dateFrom = document.getElementById('dateFrom');
 const dateTo = document.getElementById('dateTo');
@@ -1016,14 +1109,11 @@ const SETTINGS_KEY = 'ledger_settings_v1';
 let settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
 function saveSettings(){ localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }
 
-const calcToggle = document.getElementById('calcToggle');
-const calcFields = document.getElementById('calcFields');
 const calcAccount = document.getElementById('calcAccount');
 const calcRiskPct = document.getElementById('calcRiskPct');
 const calcStop = document.getElementById('calcStop');
 const calcLotSize = document.getElementById('calcLotSize');
 const calcResult = document.getElementById('calcResult');
-calcToggle.addEventListener('click', ()=> calcFields.classList.toggle('hidden'));
 calcAccount.value = settings.accountSize || '';
 calcRiskPct.value = settings.riskPct || '';
 calcLotSize.value = settings.lotSize || '';
@@ -1054,16 +1144,68 @@ function runCalc(){
 [calcAccount, calcRiskPct, calcStop, calcLotSize].forEach(el=>el.addEventListener('input', runCalc));
 runCalc();
 
-const targetToggle = document.getElementById('targetToggle');
-const targetFields = document.getElementById('targetFields');
 const fWeeklyTarget = document.getElementById('fWeeklyTarget');
-targetToggle.addEventListener('click', ()=> targetFields.classList.toggle('hidden'));
 fWeeklyTarget.value = settings.weeklyTarget || '';
 fWeeklyTarget.addEventListener('input', ()=>{
   settings.weeklyTarget = fWeeklyTarget.value;
   saveSettings();
   render();
 });
+
+// ---- tools panel (calculator + weekly target) ----
+const toolsOverlay = document.getElementById('toolsOverlay');
+document.getElementById('toolsToggle').addEventListener('click', ()=>{
+  toolsOverlay.style.display = 'flex';
+});
+document.getElementById('btnCloseTools').addEventListener('click', ()=>{
+  toolsOverlay.style.display = 'none';
+});
+toolsOverlay.addEventListener('click', (e)=>{
+  if(e.target.id === 'toolsOverlay') toolsOverlay.style.display = 'none';
+});
+
+// ---- styled modal (replaces native confirm/prompt/alert) ----
+function showModal({message, type='confirm', defaultValue='', okText='OK', cancelText='Cancel'}){
+  return new Promise(resolve=>{
+    const overlay = document.getElementById('appModal');
+    const msgEl = document.getElementById('modalMessage');
+    const inputEl = document.getElementById('modalInput');
+    const okBtn = document.getElementById('modalOk');
+    const cancelBtn = document.getElementById('modalCancel');
+    msgEl.textContent = message;
+    inputEl.style.display = type === 'prompt' ? 'block' : 'none';
+    inputEl.value = defaultValue;
+    cancelBtn.style.display = type === 'alert' ? 'none' : 'inline-block';
+    okBtn.textContent = okText;
+    cancelBtn.textContent = cancelText;
+    overlay.style.display = 'flex';
+    if(type === 'prompt') setTimeout(()=>{ inputEl.focus(); inputEl.select(); }, 0);
+    else setTimeout(()=> okBtn.focus(), 0);
+
+    function cleanup(result){
+      overlay.style.display = 'none';
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      overlay.removeEventListener('click', onOverlay);
+      document.removeEventListener('keydown', onKey);
+      resolve(result);
+    }
+    function onOk(){ cleanup(type === 'prompt' ? inputEl.value : true); }
+    function onCancel(){ cleanup(type === 'prompt' ? null : false); }
+    function onOverlay(e){ if(e.target === overlay) onCancel(); }
+    function onKey(e){
+      if(e.key === 'Escape'){ e.preventDefault(); onCancel(); }
+      if(e.key === 'Enter' && type === 'prompt' && document.activeElement === inputEl){ e.preventDefault(); onOk(); }
+    }
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+    overlay.addEventListener('click', onOverlay);
+    document.addEventListener('keydown', onKey);
+  });
+}
+function appConfirm(message, opts){ return showModal(Object.assign({message, type:'confirm'}, opts)); }
+function appPrompt(message, defaultValue, opts){ return showModal(Object.assign({message, type:'prompt', defaultValue: defaultValue || ''}, opts)); }
+function appAlert(message, opts){ return showModal(Object.assign({message, type:'alert'}, opts)); }
 
 // ---- add to home screen ----
 document.getElementById('btnHomeScreen').addEventListener('click', ()=>{
@@ -1076,7 +1218,7 @@ document.getElementById('btnHomeScreen').addEventListener('click', ()=>{
   } else {
     msg = 'Open this file in your phone\'s browser, then use its menu to "Add to Home Screen".';
   }
-  alert(msg);
+  appAlert(msg);
 });
 
 // ---- backup reminder ----
@@ -1205,7 +1347,7 @@ function render(){
     groups.forEach((list, key)=>{
       const mrow = document.createElement('tr');
       mrow.className = 'month-row';
-      mrow.innerHTML = `<td colspan="7">${key} <span class="mstats">${computeGroupStats(list)}</span></td>`;
+      mrow.innerHTML = `<td colspan="6">${key} <span class="mstats">${computeGroupStats(list)}</span></td>`;
       tbody.appendChild(mrow);
       list.forEach(t => tbody.appendChild(rowEl(t)));
     });
@@ -1237,8 +1379,7 @@ function rowEl(t){
   tr.innerHTML = `
     <td class="num">${String(t.serial).padStart(3,'0')}</td>
     <td>${escapeHtml(t.asset)}${metaLine(t)}</td>
-    <td class="num">${formatDate(t.date)}</td>
-    <td><span class="tag ${t.dir}">${t.dir}</span></td>
+    <td class="num">${formatDate(t.date)} <span class="tag ${t.dir}">${t.dir}</span></td>
     <td><span class="tag ${t.result} result-tag" data-id="${t.id}" title="Tap to update" role="button" tabindex="0" aria-label="Trade result: ${t.result}. Tap to cycle.">${symbolFor(t.result)} ${t.result}</span></td>
     <td class="rr rr-edit" data-id="${t.id}" title="Tap to set R:R" role="button" tabindex="0" aria-label="Risk to reward ${t.rr ? escapeHtml(t.rr) : 'not set'}. Tap to edit.">${t.rr ? escapeHtml(t.rr) : '—'}</td>
     <td>
@@ -1314,15 +1455,16 @@ function updateStats(){
     document.getElementById('statHitRate').textContent = '—';
     document.getElementById('hitRateTrend').innerHTML = '';
     document.getElementById('statAvgRR').textContent = '—';
+    document.getElementById('statHitRateBox').classList.remove('below');
     updateBreakdown();
     return;
   }
   const resolved = trades.filter(t=>t.result==='hit' || t.result==='miss');
   const nonPending = trades.filter(t=>t.result!=='pending');
   const hits = trades.filter(t=>t.result==='hit').length;
-  document.getElementById('statHitRate').textContent = resolved.length
-    ? Math.round((hits/resolved.length)*100) + '%'
-    : '—';
+  const hitPct = resolved.length ? Math.round((hits/resolved.length)*100) : null;
+  document.getElementById('statHitRate').textContent = hitPct !== null ? hitPct + '%' : '—';
+  document.getElementById('statHitRateBox').classList.toggle('below', hitPct !== null && hitPct < 50);
   updateHitRateTrend();
 
   const rrVals = nonPending.map(t=>parseRR(t.rr)).filter(v=>v!==null);
@@ -1838,7 +1980,7 @@ document.getElementById('tradeForm').addEventListener('submit', function(e){
   save();
   showToast(wasEditing ? 'Trade updated' : 'Trade added', null, 1800);
   fAsset.value = '';
-  fRR.value = '';
+  syncInputsFromRR('');
   fDate.valueAsDate = new Date();
   fDir.value = 'long';
   fResult.value = 'pending';
@@ -1856,9 +1998,10 @@ document.getElementById('tradeForm').addEventListener('submit', function(e){
   render();
 });
 
-function enterEditMode(id){
+async function enterEditMode(id){
   if(editingId !== null && editingId !== id){
-    if(!confirm('You have an unsaved edit in progress. Discard it and edit this trade instead?')) return;
+    const ok = await appConfirm('You have an unsaved edit in progress. Discard it and edit this trade instead?', {okText:'Discard', cancelText:'Keep editing'});
+    if(!ok) return;
   }
   const t = trades.find(tr=>tr.id === id);
   if(!t) return;
@@ -1867,7 +2010,7 @@ function enterEditMode(id){
   fDate.value = t.date;
   fDir.value = t.dir;
   fResult.value = t.result;
-  fRR.value = t.rr || '';
+  syncInputsFromRR(t.rr || '');
   fSetup.value = t.setup || '';
   const mistakeOptions = Array.from(fMistake.options).map(o=>o.value);
   if(t.mistake && !mistakeOptions.includes(t.mistake)){
@@ -1914,7 +2057,7 @@ function exitEditMode(){
 document.getElementById('btnCancelEdit').addEventListener('click', ()=>{
   exitEditMode();
   fAsset.value = '';
-  fRR.value = '';
+  syncInputsFromRR('');
   fDate.valueAsDate = new Date();
   fDir.value = 'long';
   fResult.value = 'pending';
@@ -1931,14 +2074,14 @@ document.getElementById('btnCancelEdit').addEventListener('click', ()=>{
   render();
 });
 
-tbody.addEventListener('click', function(e){
+tbody.addEventListener('click', async function(e){
   if(e.target.classList.contains('dup')){
     const id = Number(e.target.dataset.id);
     const t = trades.find(tr=>tr.id === id);
     if(t){
       fAsset.value = t.asset;
       fDir.value = t.dir;
-      fRR.value = t.rr || '';
+      syncInputsFromRR(t.rr || '');
       fSetup.value = t.setup || '';
       fSession.value = t.session || '';
       fDate.valueAsDate = new Date();
@@ -1978,7 +2121,7 @@ tbody.addEventListener('click', function(e){
     const id = Number(e.target.dataset.id);
     const t = trades.find(tr=>tr.id === id);
     if(t){
-      const val = prompt('Set risk:reward (e.g. 1:2)', t.rr || '');
+      const val = await appPrompt('Set risk:reward (e.g. 1:2)', t.rr || '');
       if(val !== null){
         t.rr = formatRRInput(val);
         save();
@@ -1995,8 +2138,8 @@ tbody.addEventListener('keydown', function(e){
   }
 });
 
-document.getElementById('btnPrint').addEventListener('click', ()=>{
-  const includeReport = confirm('Include the report summary along with your trade data?\n\nOK = Include report\nCancel = Data only');
+document.getElementById('btnPrint').addEventListener('click', async ()=>{
+  const includeReport = await appConfirm('Include the report summary along with your trade data?', {okText:'Include report', cancelText:'Data only'});
   document.body.classList.add('pr-data');
   if(includeReport){
     renderReport();
@@ -2025,8 +2168,8 @@ document.getElementById('reportFrom').addEventListener('change', renderReport);
 document.getElementById('reportTo').addEventListener('change', renderReport);
 document.getElementById('reportTagFilter').addEventListener('change', renderReport);
 
-document.getElementById('btnPrintReport').addEventListener('click', ()=>{
-  const includeData = confirm('Include your full trade log table with this report?\n\nOK = Include data\nCancel = Report only');
+document.getElementById('btnPrintReport').addEventListener('click', async ()=>{
+  const includeData = await appConfirm('Include your full trade log table with this report?', {okText:'Include data', cancelText:'Report only'});
   document.body.classList.add('pr-report');
   if(includeData) document.body.classList.add('pr-data');
   window.print();
@@ -2062,9 +2205,10 @@ function showUndoToast(deletedTrade, deletedIndex){
   });
 }
 
-document.getElementById('btnClear').addEventListener('click', ()=>{
+document.getElementById('btnClear').addEventListener('click', async ()=>{
   if(trades.length === 0) return;
-  if(confirm(`Clear all ${trades.length} logged trades? You'll get a brief chance to undo.`)){
+  const ok = await appConfirm(`Clear all ${trades.length} logged trades? You'll get a brief chance to undo.`, {okText:'Clear all', cancelText:'Cancel'});
+  if(ok){
     const cleared = trades;
     trades = [];
     save();
@@ -2123,11 +2267,11 @@ fileImport.addEventListener('change', function(e){
   const file = e.target.files[0];
   if(!file) return;
   const reader = new FileReader();
-  reader.onload = function(evt){
+  reader.onload = async function(evt){
     try{
       const imported = JSON.parse(evt.target.result);
       if(!Array.isArray(imported)) throw new Error('Invalid format');
-      const mode = confirm('Click OK to MERGE with existing trades, or Cancel to REPLACE all existing trades with this backup.');
+      const mode = await appConfirm('Merge with existing trades, or replace all existing trades with this backup?', {okText:'Merge', cancelText:'Replace'});
       if(mode){
         // merge: avoid id collisions
         const existingIds = new Set(trades.map(t=>t.id));
@@ -2142,16 +2286,16 @@ fileImport.addEventListener('change', function(e){
       trades.forEach((t,i)=>t.serial = i+1);
       save();
       render();
-      alert(`Imported ${imported.length} trades.`);
+      await appAlert(`Imported ${imported.length} trades.`);
     } catch(err){
-      alert('Could not read this file — make sure it\'s a valid backup JSON.');
+      await appAlert('Could not read this file — make sure it\'s a valid backup JSON.');
     }
     fileImport.value = '';
   };
   reader.readAsText(file);
 });
 
-const fieldOrder = [fAsset, fDate, fDir, fResult, fRR];
+const fieldOrder = [fAsset, fDate, fDir, fResult, fRRRisk, fRRReward];
 fieldOrder.forEach((el, idx)=>{
   el.addEventListener('keydown', function(e){
     if(e.key === 'Enter'){
