@@ -98,6 +98,47 @@
   .stat .l{font-size:9px;color:var(--dim);letter-spacing:0.12em;text-transform:uppercase;margin-top:2px;}
   .stat.hitcolor .n{color:var(--hit);font-size:20px;}
   .stat.hitcolor.below .n{color:var(--miss);}
+  .stat#statPnlBox .n.pos{color:var(--hit);}
+  .stat#statPnlBox .n.neg{color:var(--miss);}
+
+  .cal-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;}
+  .cal-nav{background:transparent;border:1px solid var(--line);color:var(--dim);padding:5px 10px;border-radius:2px;font-family:var(--mono);cursor:pointer;}
+  .cal-nav:hover{color:var(--ink);border-color:var(--dim);}
+  .cal-month-label{font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink);}
+  .cal-total{font-size:11px;color:var(--dim);margin-bottom:10px;letter-spacing:0.02em;}
+  .cal-total b.pos{color:var(--hit);}
+  .cal-total b.neg{color:var(--miss);}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .cal-dow{font-size:9px;color:var(--dim);text-align:center;letter-spacing:0.06em;text-transform:uppercase;padding-bottom:2px;}
+  .cal-cell{
+    aspect-ratio:1/1;
+    border:1px solid var(--line);
+    border-radius:3px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    font-size:9px;
+    color:var(--dim);
+    padding:2px;
+    cursor:default;
+    min-height:38px;
+  }
+  .cal-cell.empty{border:none;}
+  .cal-cell.has-trades{cursor:pointer;color:var(--ink);}
+  .cal-cell .cal-day{font-size:9px;color:var(--dim);align-self:flex-start;}
+  .cal-cell .cal-amt{font-size:10.5px;font-weight:700;margin-top:2px;}
+  .cal-cell.today{border-color:var(--accent);}
+  .cal-legend{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:9px;color:var(--dim);letter-spacing:0.04em;}
+  .cal-legend .sw{width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:3px;vertical-align:-1px;}
+  .cal-day-detail{margin-top:14px;border-top:1px solid var(--line);padding-top:10px;font-size:11px;}
+  .cal-day-detail .cdd-row{display:flex;justify-content:space-between;padding:5px 2px;border-bottom:1px solid var(--line);}
+  .cal-day-detail .cdd-row:last-child{border-bottom:none;}
+  .cal-note{font-size:10px;color:var(--dim);margin:0 0 14px;letter-spacing:0.02em;}
+  @media (max-width:480px){
+    .cal-cell{min-height:32px;}
+    .cal-cell .cal-amt{font-size:9px;}
+  }
 
   .breakdown{
     font-size:10px;
@@ -692,6 +733,7 @@
     body:not(.pr-data) #emptyMsg{display:none;}
 
     body:not(.pr-report) .report-overlay{display:none;}
+    #calendarOverlay{display:none !important;}
     body.pr-report .report-overlay{
       position:static;
       background:#fff;
@@ -735,6 +777,7 @@
     <div class="stat"><div class="n" id="statTotal">0</div><div class="l">Trades</div></div>
     <div class="stat hitcolor" id="statHitRateBox"><div class="n"><span id="statHitRate">—</span><span id="hitRateTrend" class="trend-arrow"></span></div><div class="l">Hit Rate</div></div>
     <div class="stat"><div class="n" id="statAvgRR">—</div><div class="l">Avg R:R</div></div>
+    <div class="stat" id="statPnlBox"><div class="n" id="statPnl">—</div><div class="l">PnL</div></div>
   </div>
   <div class="breakdown" id="breakdown"></div>
   <div id="targetBar" style="display:none;"></div>
@@ -908,6 +951,7 @@
 
   <div class="actions">
     <button id="btnReport">View Report</button>
+    <button id="btnCalendar">PnL Calendar</button>
     <button id="btnPrint">Print / Save PDF</button>
     <button id="btnCSV">Export CSV</button>
     <button id="btnJSONExport">Backup JSON</button>
@@ -1003,12 +1047,23 @@
           <input type="text" id="calcResult" readonly placeholder="Enter account size, risk %, and stop distance">
         </div>
       </div>
+      <p style="font-size:9.5px;color:var(--dim);margin:8px 2px 0;letter-spacing:0.02em;">Account size × Risk % is also used as your <b style="color:var(--ink);">$ per R</b> — this drives PnL in the stats bar and PnL Calendar.</p>
     </div>
     <div class="r-section" style="margin-bottom:0;">
       <div class="r-section-title">Weekly R target</div>
       <label for="fWeeklyTarget">Target (R)</label>
       <input type="number" step="0.5" id="fWeeklyTarget" placeholder="e.g. 5">
     </div>
+  </div>
+</div>
+<div id="calendarOverlay" class="report-overlay" style="display:none;">
+  <div class="report-panel">
+    <div class="report-head">
+      <h2>LEDGER<span>_</span> PNL CALENDAR</h2>
+      <button id="btnCloseCalendar" class="report-close" aria-label="Close calendar">✕</button>
+    </div>
+    <p class="cal-note" id="calNote" style="display:none;">Set <b style="color:var(--ink);">Account size</b> and <b style="color:var(--ink);">Risk %</b> in the ⚙ tools panel to see PnL — it's calculated as R:R result × (account size × risk %).</p>
+    <div id="calBody"></div>
   </div>
 </div>
 <div id="appModal" class="report-overlay" style="display:none;z-index:70;">
@@ -1143,6 +1198,7 @@ function runCalc(){
 }
 [calcAccount, calcRiskPct, calcStop, calcLotSize].forEach(el=>el.addEventListener('input', runCalc));
 runCalc();
+[calcAccount, calcRiskPct].forEach(el=>el.addEventListener('input', ()=>{ updateStats(); if(document.getElementById('calendarOverlay').style.display !== 'none') renderCalendar(); }));
 
 const fWeeklyTarget = document.getElementById('fWeeklyTarget');
 fWeeklyTarget.value = settings.weeklyTarget || '';
@@ -1354,6 +1410,8 @@ function render(){
   }
 
   updateStats();
+  const calOverlay = document.getElementById('calendarOverlay');
+  if(calOverlay && calOverlay.style.display !== 'none') renderCalendar();
 }
 
 function symbolFor(result){
@@ -1456,6 +1514,8 @@ function updateStats(){
     document.getElementById('hitRateTrend').innerHTML = '';
     document.getElementById('statAvgRR').textContent = '—';
     document.getElementById('statHitRateBox').classList.remove('below');
+    document.getElementById('statPnl').textContent = '—';
+    document.getElementById('statPnl').className = 'n';
     updateBreakdown();
     return;
   }
@@ -1474,6 +1534,18 @@ function updateStats(){
   } else {
     document.getElementById('statAvgRR').textContent = '—';
   }
+
+  const pnlEl = document.getElementById('statPnl');
+  const base = getRiskAmountBase();
+  if(base === null){
+    pnlEl.textContent = '—';
+    pnlEl.className = 'n';
+  } else {
+    const totalPnl = nonPending.reduce((sum,t)=> sum + tradeR(t)*base, 0);
+    pnlEl.textContent = formatPnl(totalPnl);
+    pnlEl.className = 'n' + (totalPnl > 0 ? ' pos' : (totalPnl < 0 ? ' neg' : ''));
+  }
+
   updateBreakdown();
 }
 
@@ -1580,6 +1652,28 @@ function tradeR(t){
   if(t.result === 'hit') return (rrVal !== null ? rrVal : 1);
   if(t.result === 'miss') return -1;
   return 0;
+}
+
+// $ per R, derived from the position size calculator's account size + risk % (settings).
+// Returns null when either isn't set, so PnL stays hidden until the user configures it.
+function getRiskAmountBase(){
+  const acc = parseFloat(settings.accountSize);
+  const risk = parseFloat(settings.riskPct);
+  if(!acc || !risk) return null;
+  return acc * (risk/100);
+}
+
+// PnL in $ for a single trade: null while pending, or when $ per R isn't set.
+function tradePnL(t){
+  if(t.result === 'pending') return null;
+  const base = getRiskAmountBase();
+  if(base === null) return null;
+  return tradeR(t) * base;
+}
+
+function formatPnl(v){
+  const sign = v > 0 ? '+' : (v < 0 ? '−' : '');
+  return sign + '$' + Math.abs(v).toFixed(2);
 }
 
 function computeReportData(periodFilter, customFrom, customTo, tagFilterVal){
@@ -2163,6 +2257,129 @@ document.getElementById('reportOverlay').addEventListener('click', (e)=>{
   }
 });
 
+// ---- PnL calendar ----
+let calYear, calMonth; // 0-indexed month
+document.getElementById('btnCalendar').addEventListener('click', ()=>{
+  const now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth();
+  renderCalendar();
+  document.getElementById('calendarOverlay').style.display = 'flex';
+});
+document.getElementById('btnCloseCalendar').addEventListener('click', ()=>{
+  document.getElementById('calendarOverlay').style.display = 'none';
+});
+document.getElementById('calendarOverlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'calendarOverlay') document.getElementById('calendarOverlay').style.display = 'none';
+});
+
+function pad2(n){ return String(n).padStart(2,'0'); }
+
+function renderCalendar(){
+  const base = getRiskAmountBase();
+  document.getElementById('calNote').style.display = base === null ? 'block' : 'none';
+
+  // group non-pending trades by date -> pnl sum + trade list (pnl null-safe when base missing)
+  const byDate = {};
+  trades.filter(t=>t.result!=='pending').forEach(t=>{
+    if(!byDate[t.date]) byDate[t.date] = { pnl:0, trades:[] };
+    byDate[t.date].trades.push(t);
+    if(base !== null) byDate[t.date].pnl += tradeR(t)*base;
+  });
+
+  const first = new Date(calYear, calMonth, 1);
+  const startDow = first.getDay(); // 0=Sun
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const monthLabel = first.toLocaleDateString(undefined, {month:'long', year:'numeric'});
+
+  // month total
+  let monthTotal = 0, monthHasPnl = false;
+  for(let d=1; d<=daysInMonth; d++){
+    const key = `${calYear}-${pad2(calMonth+1)}-${pad2(d)}`;
+    if(byDate[key]){ monthHasPnl = true; monthTotal += byDate[key].pnl; }
+  }
+
+  // max abs day pnl this month, for color intensity scaling
+  let maxAbs = 0;
+  for(let d=1; d<=daysInMonth; d++){
+    const key = `${calYear}-${pad2(calMonth+1)}-${pad2(d)}`;
+    if(byDate[key]) maxAbs = Math.max(maxAbs, Math.abs(byDate[key].pnl));
+  }
+
+  const todayKey = new Date().toISOString().slice(0,10);
+  const dowLabels = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+
+  let cellsHtml = dowLabels.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  for(let i=0; i<startDow; i++) cellsHtml += `<div class="cal-cell empty"></div>`;
+  for(let d=1; d<=daysInMonth; d++){
+    const key = `${calYear}-${pad2(calMonth+1)}-${pad2(d)}`;
+    const info = byDate[key];
+    let style = '', cls = 'cal-cell';
+    let amtHtml = '';
+    if(key === todayKey) cls += ' today';
+    if(info){
+      cls += ' has-trades';
+      if(base !== null){
+        const intensity = maxAbs > 0 ? Math.max(0.18, Math.min(1, Math.abs(info.pnl)/maxAbs)) : 0.3;
+        if(info.pnl > 0) style = `background:rgba(79,174,122,${intensity*0.55});border-color:rgba(79,174,122,${intensity});`;
+        else if(info.pnl < 0) style = `background:rgba(193,90,90,${intensity*0.55});border-color:rgba(193,90,90,${intensity});`;
+        else style = `background:rgba(216,178,106,0.18);border-color:var(--accent);`;
+        amtHtml = `<div class="cal-amt">${formatPnl(info.pnl)}</div>`;
+      } else {
+        style = `background:rgba(216,178,106,0.12);border-color:var(--accent);`;
+        amtHtml = `<div class="cal-amt">${info.trades.length}</div>`;
+      }
+    }
+    cellsHtml += `<div class="${cls}" style="${style}" data-date="${key}" role="${info?'button':''}" tabindex="${info?'0':''}">`
+      + `<div class="cal-day">${d}</div>${amtHtml}</div>`;
+  }
+
+  const totalHtml = base !== null
+    ? (monthHasPnl ? `Month total: <b class="${monthTotal>0?'pos':(monthTotal<0?'neg':'')}">${formatPnl(monthTotal)}</b>` : 'No resolved trades this month.')
+    : (monthHasPnl ? `${Object.keys(byDate).filter(k=>k.startsWith(`${calYear}-${pad2(calMonth+1)}`)).length} day(s) with trades — set $ per R to see PnL.` : 'No resolved trades this month.');
+
+  document.getElementById('calBody').innerHTML = `
+    <div class="cal-head">
+      <button class="cal-nav" id="calPrev">‹</button>
+      <div class="cal-month-label">${monthLabel}</div>
+      <button class="cal-nav" id="calNext">›</button>
+    </div>
+    <div class="cal-total">${totalHtml}</div>
+    <div class="cal-grid">${cellsHtml}</div>
+    <div class="cal-legend">
+      <span><span class="sw" style="background:var(--miss);"></span>Loss</span>
+      <span><span class="sw" style="background:var(--accent);"></span>Break even</span>
+      <span><span class="sw" style="background:var(--hit);"></span>Profit</span>
+    </div>
+    <div id="calDayDetail"></div>
+  `;
+
+  document.getElementById('calPrev').addEventListener('click', ()=>{
+    calMonth--; if(calMonth<0){ calMonth=11; calYear--; }
+    renderCalendar();
+  });
+  document.getElementById('calNext').addEventListener('click', ()=>{
+    calMonth++; if(calMonth>11){ calMonth=0; calYear++; }
+    renderCalendar();
+  });
+  document.querySelectorAll('#calBody .cal-cell.has-trades').forEach(cell=>{
+    cell.addEventListener('click', ()=>showCalDayDetail(cell.dataset.date, byDate[cell.dataset.date]));
+    cell.addEventListener('keydown', (e)=>{
+      if(e.key==='Enter' || e.key===' '){ e.preventDefault(); showCalDayDetail(cell.dataset.date, byDate[cell.dataset.date]); }
+    });
+  });
+}
+
+function showCalDayDetail(date, info){
+  const base = getRiskAmountBase();
+  const rows = info.trades.map(t=>{
+    const pnl = base !== null ? tradeR(t)*base : null;
+    const pnlHtml = pnl !== null ? `<span class="${pnl>0?'rok':(pnl<0?'rno':'')}">${formatPnl(pnl)}</span>` : `<span class="tag ${t.result}">${t.result}</span>`;
+    return `<div class="cdd-row"><span>${escapeHtml(t.asset)} <span style="color:var(--dim);">${t.dir}</span></span>${pnlHtml}</div>`;
+  }).join('');
+  document.getElementById('calDayDetail').innerHTML = `<div class="cal-day-detail"><div style="color:var(--dim);font-size:10px;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px;">${date}</div>${rows}</div>`;
+}
+
 document.getElementById('reportPeriod').addEventListener('change', renderReport);
 document.getElementById('reportFrom').addEventListener('change', renderReport);
 document.getElementById('reportTo').addEventListener('change', renderReport);
@@ -2227,10 +2444,11 @@ document.getElementById('btnCSV').addEventListener('click', ()=>{
     const s = String(v==null?'':v);
     return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
   };
-  let csv = 'Serial,Asset,Date,Direction,Result,R:R,Setup,Session,RulesFollowed,Mistake,Emotion,Lesson\n';
+  let csv = 'Serial,Asset,Date,Direction,Result,R:R,PnL,Setup,Session,RulesFollowed,Mistake,Emotion,Lesson\n';
   trades.forEach(t=>{
     const rf = t.rulesFollowed === true ? 'Yes' : (t.rulesFollowed === false ? 'No' : '');
-    csv += [t.serial,t.asset,t.date,t.dir,t.result,t.rr,t.setup||'',t.session||'',rf,t.mistake||'',t.emotion||'',t.lesson||''].map(csvField).join(',') + '\n';
+    const pnl = tradePnL(t);
+    csv += [t.serial,t.asset,t.date,t.dir,t.result,t.rr,pnl!==null?pnl.toFixed(2):'',t.setup||'',t.session||'',rf,t.mistake||'',t.emotion||'',t.lesson||''].map(csvField).join(',') + '\n';
   });
   const blob = new Blob([csv], {type:'text/csv'});
   const url = URL.createObjectURL(blob);
