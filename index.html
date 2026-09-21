@@ -97,6 +97,8 @@
   .stat .n{font-size:17px;font-weight:600;color:var(--ink);}
   .stat .l{font-size:9px;color:var(--dim);letter-spacing:0.12em;text-transform:uppercase;margin-top:2px;}
   .stat.hitcolor .n{color:var(--hit);}
+  .stat.poscolor .n{color:var(--hit);}
+  .stat.negcolor .n{color:var(--miss);}
 
   .breakdown{
     font-size:10px;
@@ -147,7 +149,9 @@
     letter-spacing:0.06em;
     cursor:pointer;
     border-radius:2px;
+    transition:opacity 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.08s ease, background 0.15s ease;
   }
+  button:active{transform:scale(0.96);}
   input:focus-visible, select:focus-visible, button:focus-visible,
   [role="button"]:focus-visible{
     outline:2px solid var(--accent);
@@ -185,6 +189,7 @@
     white-space:nowrap;
   }
   tbody td:nth-child(2){white-space:normal;}
+  tbody tr{transition:background 0.12s ease;}
   tbody tr:hover{background:rgba(255,255,255,0.02);}
   tbody tr.row-pending{background:rgba(216,178,106,0.04);}
   tbody tr.row-pending td:first-child{border-left:2px solid var(--accent);}
@@ -382,6 +387,11 @@
     gap:12px;
     z-index:50;
     box-shadow:0 4px 16px rgba(0,0,0,0.4);
+    animation:toastIn 0.2s ease;
+  }
+  @keyframes toastIn{
+    from{opacity:0; transform:translate(-50%, 10px);}
+    to{opacity:1; transform:translate(-50%, 0);}
   }
   .toast button{
     background:none;
@@ -405,7 +415,9 @@
     justify-content:center;
     overflow-y:auto;
     padding:24px 16px;
+    animation:overlayFadeIn 0.15s ease;
   }
+  @keyframes overlayFadeIn{from{opacity:0;} to{opacity:1;}}
   .report-panel{
     background:var(--bg);
     border:1px solid var(--line);
@@ -413,6 +425,11 @@
     max-width:640px;
     width:100%;
     padding:20px;
+    animation:panelScaleIn 0.18s ease;
+  }
+  @keyframes panelScaleIn{
+    from{opacity:0; transform:translateY(6px) scale(0.98);}
+    to{opacity:1; transform:translateY(0) scale(1);}
   }
   .report-head{
     display:flex;
@@ -446,6 +463,12 @@
     margin-left:8px;
     width:auto;
     min-width:150px;
+  }
+  #reportAssetFilter{
+    margin-bottom:16px;
+    margin-left:8px;
+    width:auto;
+    min-width:130px;
   }
   .report-custom-range{
     display:flex;
@@ -533,6 +556,123 @@
   }
   .report-actions button:hover{color:var(--ink);border-color:var(--dim);}
 
+  .cal-panel{max-width:520px;}
+  .cal-nav{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:12px;
+  }
+  .cal-nav-btn{
+    background:var(--panel);
+    border:1px solid var(--line);
+    color:var(--ink);
+    width:30px;
+    height:30px;
+    border-radius:2px;
+    font-size:15px;
+    line-height:1;
+    cursor:pointer;
+  }
+  .cal-nav-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .cal-month-label{
+    flex:1;
+    text-align:center;
+    font-size:13px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    font-weight:600;
+    color:var(--ink);
+  }
+  .cal-today-btn{
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--dim);
+    padding:5px 10px;
+    font-size:10px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    border-radius:2px;
+    cursor:pointer;
+  }
+  .cal-today-btn:hover{color:var(--ink);border-color:var(--dim);}
+  .cal-summary{
+    display:flex;
+    flex-wrap:wrap;
+    gap:4px 14px;
+    font-size:11px;
+    color:var(--dim);
+    margin-bottom:14px;
+    padding:9px 12px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:2px;
+  }
+  .cal-summary b{color:var(--ink);font-weight:600;}
+  .cal-summary b.pos{color:var(--hit);}
+  .cal-summary b.neg{color:var(--miss);}
+  .cal-dow-row{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:4px;
+    margin-bottom:4px;
+  }
+  .cal-dow-row div{
+    text-align:center;
+    font-size:9px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--dim);
+  }
+  .cal-grid{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:4px;
+  }
+  .cal-cell{
+    aspect-ratio:1;
+    border:1px solid var(--line);
+    border-radius:3px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:2px;
+    font-size:10px;
+    color:var(--dim);
+    background:var(--panel);
+    position:relative;
+  }
+  .cal-cell.empty-cell{border-color:transparent;background:transparent;}
+  .cal-cell.is-today{border-color:var(--accent);}
+  .cal-cell .cal-daynum{font-size:9.5px;color:var(--dim);position:absolute;top:3px;left:5px;}
+  .cal-cell .cal-r{font-size:12px;font-weight:700;margin-top:6px;}
+  .cal-cell.cal-pos{background:rgba(79,174,122,0.14);border-color:rgba(79,174,122,0.4);}
+  .cal-cell.cal-pos .cal-r{color:var(--hit);}
+  .cal-cell.cal-neg{background:rgba(193,90,90,0.14);border-color:rgba(193,90,90,0.4);}
+  .cal-cell.cal-neg .cal-r{color:var(--miss);}
+  .cal-cell.cal-flat{background:rgba(216,178,106,0.08);border-color:rgba(216,178,106,0.3);}
+  .cal-cell.cal-flat .cal-r{color:var(--accent);}
+  .cal-cell .cal-count{font-size:8px;color:var(--dim);}
+  .cal-cell.cal-clickable{cursor:pointer;}
+  .cal-cell.cal-clickable:hover{filter:brightness(1.2);border-color:var(--accent);}
+  .cal-cell.cal-clickable:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+  .cal-legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-top:12px;
+    font-size:9.5px;
+    color:var(--dim);
+    letter-spacing:0.02em;
+  }
+  .cal-legend-item{display:flex;align-items:center;gap:5px;}
+  .cal-dot{width:7px;height:7px;border-radius:50%;display:inline-block;}
+  @media (max-width:480px){
+    .cal-cell .cal-r{font-size:10px;}
+    .cal-cell .cal-daynum{font-size:8px;}
+  }
+
   .more-toggle{
     grid-column: 1 / -1;
     background:transparent;
@@ -544,7 +684,10 @@
     text-transform:uppercase;
     margin-bottom:2px;
   }
+  .more-toggle{display:flex;align-items:center;justify-content:center;gap:6px;transition:color 0.15s ease, border-color 0.15s ease;}
   .more-toggle:hover{color:var(--ink);border-color:var(--dim);}
+  .mt-chevron{display:inline-block;transition:transform 0.18s ease;font-size:12px;}
+  .more-toggle.open .mt-chevron{transform:rotate(90deg);}
   .more-fields{
     grid-column: 1 / -1;
     display:grid;
@@ -553,6 +696,11 @@
     padding-top:2px;
   }
   .more-fields.hidden{display:none;}
+  .more-fields:not(.hidden){animation:fadeSlideIn 0.18s ease;}
+  @keyframes fadeSlideIn{
+    from{opacity:0; transform:translateY(-4px);}
+    to{opacity:1; transform:translateY(0);}
+  }
   .lesson-field{grid-column:1 / -1;}
   .trend-arrow{font-size:11px;margin-left:3px;}
   .trend-arrow.up{color:var(--hit);}
@@ -576,6 +724,8 @@
   .corr-table tbody th{color:var(--ink);font-weight:600;text-align:left;}
   .corr-table td{color:var(--dim);}
   .corr-table td.has-val{color:var(--accent);font-weight:600;}
+  .corr-table td.neg-val{color:var(--miss);}
+  .corr-count{font-size:8px;color:var(--dim);font-weight:400;}
   .rules-toggle{display:flex;gap:6px;}
   .rules-toggle button{
     flex:1;
@@ -609,6 +759,11 @@
   .r-equity-line{fill:none;stroke:var(--accent);stroke-width:1.6;}
   .r-equity-zero{stroke:var(--line);stroke-width:1;}
 
+  @media (max-width: 480px){
+    .stat{padding:8px 5px;}
+    .stat .n{font-size:14px;}
+    .stat .l{font-size:7.5px;letter-spacing:0.08em;}
+  }
   @media (max-width: 640px){
     form{grid-template-columns: 70px 1fr;}
     .f-serial{grid-column:1;}
@@ -680,7 +835,8 @@
   <div class="stats">
     <div class="stat"><div class="n" id="statTotal">0</div><div class="l">Trades</div></div>
     <div class="stat hitcolor"><div class="n"><span id="statHitRate">—</span><span id="hitRateTrend" class="trend-arrow"></span></div><div class="l">Hit Rate</div></div>
-    <div class="stat"><div class="n" id="statAvgRR">—</div><div class="l">Avg R:R</div></div>
+    <div class="stat"><div class="n" id="statAvgRR">—</div><div class="l">Plan R:R</div></div>
+    <div class="stat" id="statExpectancyWrap"><div class="n" id="statExpectancy">—</div><div class="l" title="Average R actually realized per closed trade">Expectancy</div></div>
   </div>
   <div class="breakdown" id="breakdown"></div>
   <div id="targetBar" style="display:none;"></div>
@@ -720,7 +876,7 @@
       <label for="fRR">R:R</label>
       <input type="text" id="fRR" placeholder="1:2" autocomplete="off">
     </div>
-    <button type="button" class="more-toggle" id="moreToggle">+ Rules / Mistake / Emotion / Session</button>
+    <button type="button" class="more-toggle" id="moreToggle"><span class="mt-chevron">›</span> Rules / Mistake / Emotion / Session</button>
     <div class="more-fields" id="moreFields">
       <div>
         <label for="fSetup">Setup</label>
@@ -774,7 +930,7 @@
       </div>
     </div>
     <div class="calc-box" id="lessonBox">
-      <button type="button" class="more-toggle" id="lessonToggle">+ Add feedback / lesson</button>
+      <button type="button" class="more-toggle" id="lessonToggle"><span class="mt-chevron">›</span> Add feedback / lesson</button>
       <div class="more-fields hidden" id="lessonFields">
         <div class="lesson-field">
           <label for="fLesson">What would you do differently next time? (optional)</label>
@@ -787,7 +943,7 @@
   <p style="font-size:10px;color:var(--dim);margin:6px 2px 18px;">R:R format: <b style="color:var(--ink);">1:2</b> (risk:reward) — a plain number like <b style="color:var(--ink);">2</b> works too. Leave blank until known.</p>
 
   <div class="calc-box" id="calcBox">
-    <button type="button" class="more-toggle" id="calcToggle">+ Position size calculator</button>
+    <button type="button" class="more-toggle" id="calcToggle"><span class="mt-chevron">›</span> Position size calculator</button>
     <div class="more-fields hidden" id="calcFields">
       <div>
         <label for="calcAccount">Account size</label>
@@ -805,6 +961,10 @@
         <label for="calcLotSize">Contract/lot size</label>
         <input type="number" id="calcLotSize" placeholder="e.g. 100000">
       </div>
+      <div>
+        <label for="calcConvRate" title="Only needed if the pair's quote currency isn't your account currency (e.g. account in USD, trading EURJPY)">Quote→acct rate <span style="opacity:.6;">(optional)</span></label>
+        <input type="number" step="0.0001" id="calcConvRate" placeholder="leave blank if same currency">
+      </div>
       <div class="lesson-field">
         <label for="calcResult">Suggested size</label>
         <input type="text" id="calcResult" readonly placeholder="Enter account size, risk %, and stop distance">
@@ -813,7 +973,7 @@
   </div>
 
   <div class="calc-box" id="targetBox">
-    <button type="button" class="more-toggle" id="targetToggle">+ Weekly R target</button>
+    <button type="button" class="more-toggle" id="targetToggle"><span class="mt-chevron">›</span> Weekly R target</button>
     <div class="more-fields hidden" id="targetFields">
       <div>
         <label for="fWeeklyTarget">Weekly target (R)</label>
@@ -828,7 +988,7 @@
   <div id="streakBanner" style="display:none;"></div>
 
   <div class="toolbar">
-    <input type="text" id="searchBox" placeholder="Search asset..." aria-label="Search by asset">
+    <input type="text" id="searchBox" placeholder="Search asset, setup, notes..." aria-label="Search by asset, setup, or notes">
     <input type="date" id="dateFrom" aria-label="From date" style="max-width:130px;">
     <input type="date" id="dateTo" aria-label="To date" style="max-width:130px;">
     <select id="sortSelect" aria-label="Sort trades">
@@ -885,9 +1045,11 @@
 
   <div class="actions">
     <button id="btnReport">View Report</button>
+    <button id="btnCalendar">PnL Calendar</button>
     <button id="btnPrint">Print / Save PDF</button>
     <button id="btnCSV">Export CSV</button>
     <button id="btnJSONExport">Backup JSON</button>
+    <button id="btnShareBackup">Share Backup</button>
     <button id="btnJSONImport">Restore JSON</button>
     <button id="btnHomeScreen">Add to Home Screen</button>
     <button id="btnClear">Clear All</button>
@@ -944,9 +1106,34 @@
         <option value="emotion:Anxious">Anxious</option>
       </optgroup>
     </select>
+    <select id="reportAssetFilter" aria-label="Filter report by asset">
+      <option value="">All assets</option>
+    </select>
     <div id="reportBody"></div>
     <div class="report-actions">
       <button id="btnPrintReport">Print / Save PDF</button>
+    </div>
+  </div>
+</div>
+<div id="calendarOverlay" class="report-overlay" style="display:none;">
+  <div class="report-panel cal-panel">
+    <div class="report-head">
+      <h2>PNL<span>_</span> CALENDAR</h2>
+      <button id="btnCloseCalendar" class="report-close">✕</button>
+    </div>
+    <div class="cal-nav">
+      <button id="calPrev" class="cal-nav-btn" aria-label="Previous month">‹</button>
+      <div class="cal-month-label" id="calMonthLabel"></div>
+      <button id="calNext" class="cal-nav-btn" aria-label="Next month">›</button>
+      <button id="calToday" class="cal-today-btn">Today</button>
+    </div>
+    <div class="cal-summary" id="calSummary"></div>
+    <div class="cal-dow-row" id="calDowRow"></div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-legend">
+      <span class="cal-legend-item"><span class="cal-dot" style="background:var(--hit);"></span>Green</span>
+      <span class="cal-legend-item"><span class="cal-dot" style="background:var(--miss);"></span>Red</span>
+      <span class="cal-legend-item"><span class="cal-dot" style="background:var(--line);"></span>No closed trades</span>
     </div>
   </div>
 </div>
@@ -993,6 +1180,7 @@ let rulesFollowedState = null;
 const MORE_OPEN_KEY = 'ledger_more_open';
 function setMoreOpen(open){
   moreFields.classList.toggle('hidden', !open);
+  moreToggle.classList.toggle('open', open);
   localStorage.setItem(MORE_OPEN_KEY, open ? '1' : '0');
 }
 setMoreOpen(localStorage.getItem(MORE_OPEN_KEY) === '1');
@@ -1009,7 +1197,10 @@ tagFilter.addEventListener('change', render);
 
 const lessonToggle = document.getElementById('lessonToggle');
 const lessonFields = document.getElementById('lessonFields');
-lessonToggle.addEventListener('click', ()=> lessonFields.classList.toggle('hidden'));
+lessonToggle.addEventListener('click', ()=>{
+  lessonFields.classList.toggle('hidden');
+  lessonToggle.classList.toggle('open', !lessonFields.classList.contains('hidden'));
+});
 
 // ---- settings (account size, risk %, weekly target) ----
 const SETTINGS_KEY = 'ledger_settings_v1';
@@ -1022,19 +1213,26 @@ const calcAccount = document.getElementById('calcAccount');
 const calcRiskPct = document.getElementById('calcRiskPct');
 const calcStop = document.getElementById('calcStop');
 const calcLotSize = document.getElementById('calcLotSize');
+const calcConvRate = document.getElementById('calcConvRate');
 const calcResult = document.getElementById('calcResult');
-calcToggle.addEventListener('click', ()=> calcFields.classList.toggle('hidden'));
+calcToggle.addEventListener('click', ()=>{
+  calcFields.classList.toggle('hidden');
+  calcToggle.classList.toggle('open', !calcFields.classList.contains('hidden'));
+});
 calcAccount.value = settings.accountSize || '';
 calcRiskPct.value = settings.riskPct || '';
 calcLotSize.value = settings.lotSize || '';
+calcConvRate.value = settings.convRate || '';
 function runCalc(){
   const acc = parseFloat(calcAccount.value);
   const risk = parseFloat(calcRiskPct.value);
   const stop = parseFloat(calcStop.value);
   const lotSize = parseFloat(calcLotSize.value);
+  const convRate = parseFloat(calcConvRate.value);
   settings.accountSize = calcAccount.value;
   settings.riskPct = calcRiskPct.value;
   settings.lotSize = calcLotSize.value;
+  settings.convRate = calcConvRate.value;
   saveSettings();
   const missing = [];
   if(!acc) missing.push('account size');
@@ -1046,18 +1244,23 @@ function runCalc(){
     return;
   }
   const riskAmount = acc * (risk/100);
-  const size = riskAmount / stop;
+  const effectiveConv = (convRate && convRate > 0) ? convRate : 1;
+  const size = (riskAmount / stop) / effectiveConv;
   let out = size.toFixed(2) + ' units (risking ' + riskAmount.toFixed(2) + ')';
   if(lotSize > 0) out += ' · ' + (size/lotSize).toFixed(2) + ' lots';
+  if(convRate && convRate !== 1) out += ' · conv rate ' + convRate;
   calcResult.value = out;
 }
-[calcAccount, calcRiskPct, calcStop, calcLotSize].forEach(el=>el.addEventListener('input', runCalc));
+[calcAccount, calcRiskPct, calcStop, calcLotSize, calcConvRate].forEach(el=>el.addEventListener('input', runCalc));
 runCalc();
 
 const targetToggle = document.getElementById('targetToggle');
 const targetFields = document.getElementById('targetFields');
 const fWeeklyTarget = document.getElementById('fWeeklyTarget');
-targetToggle.addEventListener('click', ()=> targetFields.classList.toggle('hidden'));
+targetToggle.addEventListener('click', ()=>{
+  targetFields.classList.toggle('hidden');
+  targetToggle.classList.toggle('open', !targetFields.classList.contains('hidden'));
+});
 fWeeklyTarget.value = settings.weeklyTarget || '';
 fWeeklyTarget.addEventListener('input', ()=>{
   settings.weeklyTarget = fWeeklyTarget.value;
@@ -1152,7 +1355,12 @@ function render(){
 
   const fromVal = dateFrom.value;
   const toVal = dateTo.value;
-  let filtered = trades.filter(t => !query || t.asset.includes(query));
+  let filtered = trades.filter(t => {
+    if(!query) return true;
+    const haystack = [t.asset, t.setup, t.lesson, t.mistake, t.emotion, t.session]
+      .filter(Boolean).join(' ').toUpperCase();
+    return haystack.includes(query);
+  });
   if(fromVal) filtered = filtered.filter(t => t.date >= fromVal);
   if(toVal) filtered = filtered.filter(t => t.date <= toVal);
   if(filterVal){
@@ -1332,6 +1540,20 @@ function updateStats(){
   } else {
     document.getElementById('statAvgRR').textContent = '—';
   }
+
+  const expWrap = document.getElementById('statExpectancyWrap');
+  const expEl = document.getElementById('statExpectancy');
+  if(nonPending.length){
+    const rVals = nonPending.map(t=>tradeR(t));
+    const exp = rVals.reduce((a,b)=>a+b,0)/rVals.length;
+    expEl.textContent = (exp>0?'+':'') + exp.toFixed(2) + 'R';
+    expWrap.classList.remove('poscolor','negcolor');
+    if(exp > 0) expWrap.classList.add('poscolor');
+    else if(exp < 0) expWrap.classList.add('negcolor');
+  } else {
+    expEl.textContent = '—';
+    expWrap.classList.remove('poscolor','negcolor');
+  }
   updateBreakdown();
 }
 
@@ -1440,7 +1662,7 @@ function tradeR(t){
   return 0;
 }
 
-function computeReportData(periodFilter, customFrom, customTo, tagFilterVal){
+function computeReportData(periodFilter, customFrom, customTo, tagFilterVal, assetFilterVal){
   const now = new Date();
   let list = trades;
   if(periodFilter === 'thismonth'){
@@ -1471,6 +1693,7 @@ function computeReportData(periodFilter, customFrom, customTo, tagFilterVal){
       return true;
     });
   }
+  if(assetFilterVal) list = list.filter(t=>t.asset === assetFilterVal);
 
   const winLoss = list.filter(t=>t.result==='hit' || t.result==='miss');
   const nonPending = list.filter(t=>t.result!=='pending');
@@ -1479,12 +1702,13 @@ function computeReportData(periodFilter, customFrom, customTo, tagFilterVal){
   const rrVals = nonPending.map(t=>parseRR(t.rr)).filter(v=>v!==null);
   const avgRR = rrVals.length ? (rrVals.reduce((a,b)=>a+b,0)/rrVals.length) : null;
 
-  // longest hit streak (chronological, hit/miss only)
+  // longest hit streak & longest losing streak (chronological, hit/miss only)
   const chronological = [...winLoss].sort((a,b)=> a.date.localeCompare(b.date) || a.serial - b.serial);
   let longestStreak = 0, current = 0;
+  let longestLossStreak = 0, currentLoss = 0;
   chronological.forEach(t=>{
-    if(t.result === 'hit'){ current++; longestStreak = Math.max(longestStreak, current); }
-    else { current = 0; }
+    if(t.result === 'hit'){ current++; longestStreak = Math.max(longestStreak, current); currentLoss = 0; }
+    else { current = 0; currentLoss++; longestLossStreak = Math.max(longestLossStreak, currentLoss); }
   });
 
   const longs = list.filter(t=>t.dir==='long' && (t.result==='hit'||t.result==='miss'));
@@ -1615,7 +1839,9 @@ function computeReportData(periodFilter, customFrom, customTo, tagFilterVal){
     nonPending.forEach(t=>{
       if(t.emotion && t.mistake){
         const key = t.emotion + '|' + t.mistake;
-        grid[key] = (grid[key]||0) + 1;
+        if(!grid[key]) grid[key] = {count:0, rCost:0};
+        grid[key].count++;
+        grid[key].rCost += tradeR(t);
       }
     });
     correlation = { emotions: emotionsPresent, mistakes: mistakesPresent, grid };
@@ -1629,7 +1855,16 @@ function computeReportData(periodFilter, customFrom, customTo, tagFilterVal){
     if(worst === null || r < worst.r) worst = {t, r};
   });
 
-  return { total: list.length, hitRate, avgRR, longestStreak, longRate, shortRate, months, assets, rulePct, mistakes, sessions, equity, currentStreak, streakType, setups, dow, best, worst, profitFactor, expectancy, maxDrawdown, correlation };
+  return { total: list.length, hitRate, avgRR, longestStreak, longestLossStreak, longRate, shortRate, months, assets, rulePct, mistakes, sessions, equity, currentStreak, streakType, setups, dow, best, worst, profitFactor, expectancy, maxDrawdown, correlation };
+}
+
+function populateReportAssetFilter(){
+  const sel = document.getElementById('reportAssetFilter');
+  const current = sel.value;
+  const assetsPresent = Array.from(new Set(trades.map(t=>t.asset))).sort();
+  sel.innerHTML = '<option value="">All assets</option>' +
+    assetsPresent.map(a=>`<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
+  if(assetsPresent.includes(current)) sel.value = current;
 }
 
 function renderReport(){
@@ -1637,8 +1872,10 @@ function renderReport(){
   const customFrom = document.getElementById('reportFrom').value;
   const customTo = document.getElementById('reportTo').value;
   const tagFilterVal = document.getElementById('reportTagFilter').value;
+  populateReportAssetFilter();
+  const assetFilterVal = document.getElementById('reportAssetFilter').value;
   document.getElementById('reportCustomRange').style.display = period === 'custom' ? 'flex' : 'none';
-  const d = computeReportData(period, customFrom, customTo, tagFilterVal);
+  const d = computeReportData(period, customFrom, customTo, tagFilterVal, assetFilterVal);
   const body = document.getElementById('reportBody');
 
   let html = `
@@ -1646,7 +1883,8 @@ function renderReport(){
     <div class="r-card"><div class="rn">${d.total}</div><div class="rl">Trades</div></div>
     <div class="r-card"><div class="rn">${d.hitRate !== null ? d.hitRate + '%' : '—'}</div><div class="rl">Hit Rate</div></div>
     <div class="r-card"><div class="rn">${d.avgRR !== null ? '1:' + d.avgRR.toFixed(1) : '—'}</div><div class="rl">Avg R:R</div></div>
-    <div class="r-card"><div class="rn">${d.longestStreak}</div><div class="rl">Longest Streak</div></div>
+    <div class="r-card"><div class="rn" style="color:var(--hit);">${d.longestStreak}</div><div class="rl">Longest Win Streak</div></div>
+    <div class="r-card"><div class="rn" style="color:var(--miss);">${d.longestLossStreak}</div><div class="rl">Longest Losing Streak</div></div>
     <div class="r-card"><div class="rn">${d.rulePct !== null ? d.rulePct + '%' : '—'}</div><div class="rl">Rule Adherence</div></div>
     <div class="r-card"><div class="rn">${d.currentStreak || 0}</div><div class="rl">Current ${d.streakType === 'hit' ? 'Win' : d.streakType === 'miss' ? 'Loss' : ''} Streak</div></div>
     <div class="r-card"><div class="rn">${d.profitFactor !== null ? d.profitFactor.toFixed(2) : '—'}</div><div class="rl">Profit Factor</div></div>
@@ -1752,13 +1990,18 @@ function renderReport(){
 
   if(d.correlation){
     const c = d.correlation;
-    html += `<div class="r-section"><div class="r-section-title">Emotion × Mistake</div>
+    html += `<div class="r-section"><div class="r-section-title">Emotion × Mistake (R cost)</div>
     <div class="corr-wrap"><table class="corr-table"><thead><tr><th></th>${c.mistakes.map(m=>`<th>${escapeHtml(m)}</th>`).join('')}</tr></thead><tbody>`;
     c.emotions.forEach(em=>{
       html += `<tr><th>${escapeHtml(em)}</th>`;
       c.mistakes.forEach(m=>{
-        const count = c.grid[em+'|'+m] || 0;
-        html += `<td class="${count>0?'has-val':''}">${count>0?count:'—'}</td>`;
+        const cell = c.grid[em+'|'+m];
+        if(cell){
+          const label = (cell.rCost>0?'+':'') + cell.rCost.toFixed(1) + 'R';
+          html += `<td class="has-val ${cell.rCost<0?'neg-val':''}" title="${cell.count} trade${cell.count>1?'s':''}">${label}<br><span class="corr-count">${cell.count}×</span></td>`;
+        } else {
+          html += `<td>—</td>`;
+        }
       });
       html += `</tr>`;
     });
@@ -2020,10 +2263,152 @@ document.getElementById('reportOverlay').addEventListener('click', (e)=>{
   }
 });
 
+// ---- PnL calendar ----
+let calYear, calMonth; // calMonth is 0-indexed
+(function initCalendarDate(){
+  const now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth();
+})();
+
+function dateKey(y, m, d){
+  return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+
+function renderCalendar(){
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('calMonthLabel').textContent = `${monthNames[calMonth]} ${calYear}`;
+
+  const dowRow = document.getElementById('calDowRow');
+  const dowLabels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  dowRow.innerHTML = dowLabels.map(d=>`<div>${d}</div>`).join('');
+
+  const firstOfMonth = new Date(calYear, calMonth, 1);
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  let firstWeekday = firstOfMonth.getDay();
+  firstWeekday = firstWeekday === 0 ? 6 : firstWeekday - 1; // Monday-first offset
+
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  for(let i=0;i<firstWeekday;i++){
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell empty-cell';
+    grid.appendChild(cell);
+  }
+
+  const today = new Date();
+  const isCurrentMonth = today.getFullYear()===calYear && today.getMonth()===calMonth;
+
+  let monthTotalR = 0, tradingDays = 0, greenDays = 0, redDays = 0;
+  let bestDay = null, worstDay = null;
+
+  for(let day=1; day<=daysInMonth; day++){
+    const key = dateKey(calYear, calMonth, day);
+    const dayTrades = trades.filter(t=>t.date===key && t.result!=='pending');
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell';
+    if(isCurrentMonth && today.getDate()===day) cell.classList.add('is-today');
+
+    let inner = `<span class="cal-daynum">${day}</span>`;
+    if(dayTrades.length){
+      const dayR = dayTrades.reduce((a,t)=>a+tradeR(t),0);
+      tradingDays++;
+      monthTotalR += dayR;
+      if(dayR > 0){ cell.classList.add('cal-pos'); greenDays++; }
+      else if(dayR < 0){ cell.classList.add('cal-neg'); redDays++; }
+      else cell.classList.add('cal-flat');
+      if(bestDay===null || dayR > bestDay.r) bestDay = {key, r: dayR};
+      if(worstDay===null || dayR < worstDay.r) worstDay = {key, r: dayR};
+      inner += `<span class="cal-r">${dayR>0?'+':''}${dayR.toFixed(1)}R</span><span class="cal-count">${dayTrades.length} trade${dayTrades.length>1?'s':''}</span>`;
+      cell.title = `${dayTrades.length} trade(s) on ${formatDate(key)} · ${dayR>0?'+':''}${dayR.toFixed(1)}R — tap to view`;
+      cell.classList.add('cal-clickable');
+      cell.dataset.date = key;
+      cell.setAttribute('role','button');
+      cell.tabIndex = 0;
+      cell.setAttribute('aria-label', `${dayTrades.length} trade(s) on ${formatDate(key)}, ${dayR>0?'+':''}${dayR.toFixed(1)}R. Tap to view in log.`);
+    }
+    cell.innerHTML = inner;
+    grid.appendChild(cell);
+  }
+
+  const summary = document.getElementById('calSummary');
+  if(tradingDays === 0){
+    summary.innerHTML = 'No closed trades this month.';
+  } else {
+    const totalClass = monthTotalR > 0 ? 'pos' : (monthTotalR < 0 ? 'neg' : '');
+    summary.innerHTML = `
+      <span>Month total <b class="${totalClass}">${monthTotalR>0?'+':''}${monthTotalR.toFixed(1)}R</b></span>
+      <span>Trading days <b>${tradingDays}</b></span>
+      <span><b class="pos">${greenDays}</b> green · <b class="neg">${redDays}</b> red</span>
+      ${bestDay ? `<span>Best day <b class="pos">+${bestDay.r.toFixed(1)}R</b></span>` : ''}
+      ${worstDay && worstDay.r < 0 ? `<span>Worst day <b class="neg">${worstDay.r.toFixed(1)}R</b></span>` : ''}
+    `;
+  }
+}
+
+document.getElementById('btnCalendar').addEventListener('click', ()=>{
+  const now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth();
+  renderCalendar();
+  document.getElementById('calendarOverlay').style.display = 'flex';
+});
+document.getElementById('btnCloseCalendar').addEventListener('click', ()=>{
+  document.getElementById('calendarOverlay').style.display = 'none';
+});
+document.getElementById('calendarOverlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'calendarOverlay'){
+    document.getElementById('calendarOverlay').style.display = 'none';
+  }
+});
+document.getElementById('calPrev').addEventListener('click', ()=>{
+  calMonth--;
+  if(calMonth < 0){ calMonth = 11; calYear--; }
+  renderCalendar();
+});
+document.getElementById('calNext').addEventListener('click', ()=>{
+  calMonth++;
+  if(calMonth > 11){ calMonth = 0; calYear++; }
+  renderCalendar();
+});
+document.getElementById('calToday').addEventListener('click', ()=>{
+  const now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth();
+  renderCalendar();
+});
+
+function jumpToDate(dateStr){
+  dateFrom.value = dateStr;
+  dateTo.value = dateStr;
+  searchBox.value = '';
+  tagFilter.value = '';
+  document.getElementById('calendarOverlay').style.display = 'none';
+  render();
+  window.scrollTo({top:0, behavior:'smooth'});
+  showToast(`Showing trades from ${formatDate(dateStr)}`, ()=>{
+    dateFrom.value = '';
+    dateTo.value = '';
+    render();
+  }, 5000);
+}
+
+document.getElementById('calGrid').addEventListener('click', (e)=>{
+  const cell = e.target.closest('.cal-cell[data-date]');
+  if(cell) jumpToDate(cell.dataset.date);
+});
+document.getElementById('calGrid').addEventListener('keydown', (e)=>{
+  if((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('cal-cell') && e.target.dataset.date){
+    e.preventDefault();
+    jumpToDate(e.target.dataset.date);
+  }
+});
+
 document.getElementById('reportPeriod').addEventListener('change', renderReport);
 document.getElementById('reportFrom').addEventListener('change', renderReport);
 document.getElementById('reportTo').addEventListener('change', renderReport);
 document.getElementById('reportTagFilter').addEventListener('change', renderReport);
+document.getElementById('reportAssetFilter').addEventListener('change', renderReport);
 
 document.getElementById('btnPrintReport').addEventListener('click', ()=>{
   const includeData = confirm('Include your full trade log table with this report?\n\nOK = Include data\nCancel = Report only');
@@ -2114,6 +2499,24 @@ document.getElementById('btnJSONExport').addEventListener('click', ()=>{
   localStorage.setItem(BACKUP_KEY, String(Date.now()));
   localStorage.setItem(BACKUP_COUNT_KEY, String(trades.length));
   checkBackupReminder();
+});
+
+document.getElementById('btnShareBackup').addEventListener('click', async ()=>{
+  if(trades.length === 0) return;
+  const filename = `trade-log-backup-${new Date().toISOString().slice(0,10)}.json`;
+  const file = new File([JSON.stringify(trades, null, 2)], filename, {type:'application/json'});
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    try{
+      await navigator.share({files:[file], title:'LEDGER backup', text:'Trade log backup'});
+      localStorage.setItem(BACKUP_KEY, String(Date.now()));
+      localStorage.setItem(BACKUP_COUNT_KEY, String(trades.length));
+      checkBackupReminder();
+    }catch(err){
+      // share sheet dismissed — no action needed
+    }
+  } else {
+    alert('Sharing files isn\'t supported in this browser. Use "Backup JSON" to download it instead, then share the file manually.');
+  }
 });
 
 const fileImport = document.getElementById('fileImport');
