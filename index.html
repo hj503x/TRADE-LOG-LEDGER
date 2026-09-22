@@ -214,6 +214,16 @@
   .rr{color:var(--accent);}
   .rr-edit{cursor:pointer;}
   .rr-edit:hover{opacity:0.75;}
+  .rr-inline-input{
+    width:56px;
+    padding:3px 5px;
+    font-size:11px;
+    background:var(--bg);
+    border:1px solid var(--accent);
+    color:var(--ink);
+    border-radius:2px;
+    font-family:var(--mono);
+  }
   .del{
     background:none;
     border:none;
@@ -324,7 +334,7 @@
   }
   .target-fill{height:100%;background:var(--accent);}
   .target-fill.over{background:var(--hit);}
-  .target-label{display:flex;justify-content:space-between;font-size:10px;color:var(--dim);letter-spacing:0.04em;}
+  .target-label{display:flex;justify-content:space-between;flex-wrap:wrap;gap:2px 8px;font-size:10px;color:var(--dim);letter-spacing:0.04em;}
 
   .fab-add{
     position:fixed;
@@ -832,6 +842,8 @@
     </div>
   </header>
 
+  <div id="storageWarning" class="streak-banner" style="display:none;">⚠ Your browser is blocking local storage (private/incognito mode, or storage disabled). Trades you log now will <b>not be saved</b> once you close this page. Switch to normal browsing mode to keep your data.</div>
+
   <div class="stats">
     <div class="stat"><div class="n" id="statTotal">0</div><div class="l">Trades</div></div>
     <div class="stat hitcolor"><div class="n"><span id="statHitRate">—</span><span id="hitRateTrend" class="trend-arrow"></span></div><div class="l">Hit Rate</div></div>
@@ -1137,12 +1149,38 @@
     </div>
   </div>
 </div>
+<div id="infoOverlay" class="report-overlay" style="display:none;">
+  <div class="report-panel" style="max-width:420px;">
+    <div class="report-head">
+      <h2 id="infoTitle"></h2>
+      <button id="infoClose" class="report-close">✕</button>
+    </div>
+    <div id="infoBody" style="font-size:12px;line-height:1.7;color:var(--ink);"></div>
+  </div>
+</div>
 <div id="toast" class="toast" style="display:none;"></div>
 
 <script>
 const STORAGE_KEY = 'ledger_trades_v1';
-let trades = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+let storageAvailable = true;
+try{
+  const __t = '__ledger_test__';
+  localStorage.setItem(__t, '1');
+  localStorage.removeItem(__t);
+}catch(err){
+  storageAvailable = false;
+}
+let trades = [];
+try{
+  trades = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+}catch(err){
+  trades = [];
+}
 let editingId = null;
+
+if(!storageAvailable){
+  document.getElementById('storageWarning').style.display = 'block';
+}
 
 const tbody = document.getElementById('tbody');
 const emptyMsg = document.getElementById('emptyMsg');
@@ -1191,6 +1229,15 @@ moreToggle.addEventListener('click', ()=>{
 fabAdd.addEventListener('click', ()=>{
   window.scrollTo({top:0, behavior:'smooth'});
   fAsset.focus();
+});
+
+// suggest last-used R:R for this asset as a placeholder (never overwrites a typed value)
+fAsset.addEventListener('blur', ()=>{
+  if(editingId !== null || fRR.value) return;
+  const assetVal = fAsset.value.trim().toUpperCase();
+  if(!assetVal){ fRR.placeholder = '1:2'; return; }
+  const past = [...trades].reverse().find(t=>t.asset === assetVal && t.rr);
+  fRR.placeholder = past ? `${past.rr} (last used)` : '1:2';
 });
 
 tagFilter.addEventListener('change', render);
@@ -1268,18 +1315,31 @@ fWeeklyTarget.addEventListener('input', ()=>{
   render();
 });
 
+// ---- themed info modal (replaces browser alert() for instructional messages) ----
+function showInfoModal(title, html){
+  document.getElementById('infoTitle').textContent = title;
+  document.getElementById('infoBody').innerHTML = html;
+  document.getElementById('infoOverlay').style.display = 'flex';
+}
+document.getElementById('infoClose').addEventListener('click', ()=>{
+  document.getElementById('infoOverlay').style.display = 'none';
+});
+document.getElementById('infoOverlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'infoOverlay') document.getElementById('infoOverlay').style.display = 'none';
+});
+
 // ---- add to home screen ----
 document.getElementById('btnHomeScreen').addEventListener('click', ()=>{
   const ua = navigator.userAgent;
   let msg;
   if(/iPhone|iPad|iPod/.test(ua)){
-    msg = 'In Safari: tap the Share icon, then "Add to Home Screen".';
+    msg = 'In Safari: tap the <b>Share</b> icon, then <b>"Add to Home Screen"</b>.';
   } else if(/Android/.test(ua)){
-    msg = 'In Chrome: tap the ⋮ menu, then "Add to Home screen" or "Install app".';
+    msg = 'In Chrome: tap the <b>⋮</b> menu, then <b>"Add to Home screen"</b> or <b>"Install app"</b>.';
   } else {
-    msg = 'Open this file in your phone\'s browser, then use its menu to "Add to Home Screen".';
+    msg = 'Open this file in your phone\'s browser, then use its menu to <b>"Add to Home Screen"</b>.';
   }
-  alert(msg);
+  showInfoModal('Add to Home Screen', `<p>${msg}</p>`);
 });
 
 // ---- backup reminder ----
@@ -1318,11 +1378,17 @@ document.getElementById('dateNow').textContent = new Date().toLocaleDateString('
 fDate.valueAsDate = new Date();
 
 function save(){
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(trades));
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(trades));
+    return true;
+  }catch(err){
+    showToast('⚠ Save failed — storage full or blocked. This change may not persist.', null, 6000);
+    return false;
+  }
 }
 
 function nextSerial(){
-  return trades.length ? trades[trades.length-1].serial + 1 : 1;
+  return trades.length ? Math.max(...trades.map(t=>Number(t.serial)||0)) + 1 : 1;
 }
 
 function monthKey(dateStr){
@@ -1600,15 +1666,17 @@ function updateTargetBar(){
     const dt = new Date(t.date + 'T00:00:00');
     return dt >= weekStart;
   });
-  let cum = 0;
+  let cum = 0, wins = 0, losses = 0;
   thisWeek.forEach(t=>{
     const rrVal = parseRR(t.rr);
-    if(t.result==='hit') cum += (rrVal !== null ? rrVal : 1);
-    else if(t.result==='miss') cum -= 1;
+    if(t.result==='hit'){ cum += (rrVal !== null ? rrVal : 1); wins++; }
+    else if(t.result==='miss'){ cum -= 1; losses++; }
   });
+  const winLossCount = wins + losses;
+  const winRate = winLossCount ? Math.round((wins/winLossCount)*100) + '%' : '—';
   const pct = Math.max(0, Math.min(100, (cum/target)*100));
   el.innerHTML = `
-    <div class="target-label"><span>Weekly target</span><span>${cum.toFixed(1)}R / ${target}R</span></div>
+    <div class="target-label"><span>Weekly target</span><span>${cum.toFixed(1)}R / ${target}R · ${thisWeek.length} trade${thisWeek.length===1?'':'s'} · ${winRate} hit</span></div>
     <div class="target-track"><div class="target-fill ${cum>=target?'over':''}" style="width:${pct}%"></div></div>
   `;
   el.style.display = 'block';
@@ -2082,6 +2150,7 @@ document.getElementById('tradeForm').addEventListener('submit', function(e){
   showToast(wasEditing ? 'Trade updated' : 'Trade added', null, 1800);
   fAsset.value = '';
   fRR.value = '';
+  fRR.placeholder = '1:2';
   fDate.valueAsDate = new Date();
   fDir.value = 'long';
   fResult.value = 'pending';
@@ -2158,6 +2227,7 @@ document.getElementById('btnCancelEdit').addEventListener('click', ()=>{
   exitEditMode();
   fAsset.value = '';
   fRR.value = '';
+  fRR.placeholder = '1:2';
   fDate.valueAsDate = new Date();
   fDir.value = 'long';
   fResult.value = 'pending';
@@ -2202,7 +2272,6 @@ tbody.addEventListener('click', function(e){
     if(idx === -1) return;
     const deleted = trades[idx];
     trades = trades.filter(t=>t.id !== id);
-    trades.forEach((t,i)=>t.serial = i+1);
     save();
     render();
     showUndoToast(deleted, idx);
@@ -2217,17 +2286,36 @@ tbody.addEventListener('click', function(e){
       render();
     }
   }
-  if(e.target.classList.contains('rr-edit')){
+  if(e.target.classList.contains('rr-edit') && !e.target.classList.contains('editing')){
     const id = Number(e.target.dataset.id);
     const t = trades.find(tr=>tr.id === id);
-    if(t){
-      const val = prompt('Set risk:reward (e.g. 1:2)', t.rr || '');
-      if(val !== null){
-        t.rr = formatRRInput(val);
-        save();
-        render();
-      }
+    if(!t) return;
+    const td = e.target;
+    td.classList.add('editing');
+    const original = t.rr || '';
+    td.innerHTML = `<input type="text" class="rr-inline-input" value="${escapeHtml(original)}" placeholder="1:2" aria-label="Edit risk to reward">`;
+    const input = td.querySelector('input');
+    input.focus();
+    input.select();
+    let done = false;
+    function commit(){
+      if(done) return;
+      done = true;
+      t.rr = formatRRInput(input.value.trim());
+      save();
+      render();
     }
+    function cancel(){
+      if(done) return;
+      done = true;
+      render();
+    }
+    input.addEventListener('keydown', ev=>{
+      if(ev.key === 'Enter'){ ev.preventDefault(); commit(); }
+      else if(ev.key === 'Escape'){ ev.preventDefault(); cancel(); }
+    });
+    input.addEventListener('blur', commit);
+    return;
   }
 });
 
@@ -2441,7 +2529,6 @@ function showToast(message, onUndo, duration){
 function showUndoToast(deletedTrade, deletedIndex){
   showToast('Trade deleted', ()=>{
     trades.splice(deletedIndex, 0, deletedTrade);
-    trades.forEach((t,i)=>t.serial = i+1);
     save();
     render();
   });
@@ -2522,6 +2609,14 @@ document.getElementById('btnShareBackup').addEventListener('click', async ()=>{
 const fileImport = document.getElementById('fileImport');
 document.getElementById('btnJSONImport').addEventListener('click', ()=>fileImport.click());
 
+function isValidTradeShape(t){
+  return !!t && typeof t === 'object'
+    && typeof t.asset === 'string' && t.asset.trim() !== ''
+    && typeof t.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(t.date)
+    && ['long','short'].includes(t.dir)
+    && ['pending','hit','miss','breakeven'].includes(t.result);
+}
+
 fileImport.addEventListener('change', function(e){
   const file = e.target.files[0];
   if(!file) return;
@@ -2530,22 +2625,43 @@ fileImport.addEventListener('change', function(e){
     try{
       const imported = JSON.parse(evt.target.result);
       if(!Array.isArray(imported)) throw new Error('Invalid format');
+      const validTrades = imported.filter(isValidTradeShape);
+      const invalidCount = imported.length - validTrades.length;
+      if(validTrades.length === 0){
+        alert('None of the entries in this file look like valid trades — nothing was imported.');
+        fileImport.value = '';
+        return;
+      }
+      if(invalidCount > 0){
+        const proceed = confirm(`${invalidCount} of ${imported.length} entries look malformed and will be skipped.\n\nImport the remaining ${validTrades.length} valid trades?`);
+        if(!proceed){ fileImport.value = ''; return; }
+      }
       const mode = confirm('Click OK to MERGE with existing trades, or Cancel to REPLACE all existing trades with this backup.');
       if(mode){
-        // merge: avoid id collisions
+        // merge: avoid id and serial collisions, keep original serials where possible
         const existingIds = new Set(trades.map(t=>t.id));
-        imported.forEach(t=>{
-          if(existingIds.has(t.id)) t.id = Date.now() + Math.random();
+        const existingSerials = new Set(trades.map(t=>t.serial));
+        let nextS = trades.length ? Math.max(...trades.map(t=>Number(t.serial)||0)) + 1 : 1;
+        validTrades.forEach(t=>{
+          if(t.id === undefined || t.id === null || existingIds.has(t.id)){ t.id = Date.now() + Math.random(); }
+          existingIds.add(t.id);
+          if(typeof t.serial !== 'number' || existingSerials.has(t.serial)){ t.serial = nextS++; }
+          existingSerials.add(t.serial);
         });
-        trades = trades.concat(imported);
+        trades = trades.concat(validTrades);
       } else {
-        trades = imported;
+        // replace: keep original serials from the backup, fill in any missing ones
+        let maxS = 0;
+        validTrades.forEach(t=>{ if(typeof t.serial === 'number') maxS = Math.max(maxS, t.serial); });
+        validTrades.forEach(t=>{
+          if(t.id === undefined || t.id === null) t.id = Date.now() + Math.random();
+          if(typeof t.serial !== 'number'){ maxS++; t.serial = maxS; }
+        });
+        trades = validTrades;
       }
-      // renumber serials by current array order
-      trades.forEach((t,i)=>t.serial = i+1);
       save();
       render();
-      alert(`Imported ${imported.length} trades.`);
+      alert(`Imported ${validTrades.length} trade${validTrades.length===1?'':'s'}.`);
     } catch(err){
       alert('Could not read this file — make sure it\'s a valid backup JSON.');
     }
