@@ -143,6 +143,8 @@
   }
   input:focus, select:focus{border-color:var(--accent);}
   input[readonly]{color:var(--dim);}
+  .rr-warn{font-size:9px;color:var(--miss);margin-top:4px;letter-spacing:0.02em;}
+  #fRR.rr-invalid{border-color:var(--miss);}
   button{
     font-family:var(--mono);
     font-size:11px;
@@ -245,6 +247,13 @@
     font-size:13px;
   }
   .dup:hover{color:#8fb5d8;}
+  .shot{
+    background:none;
+    border:none;
+    color:var(--dim);
+    font-size:13px;
+  }
+  .shot:hover{color:var(--ink);}
   .row-actions{display:flex;gap:4px;}
   .row-actions button{
     padding:8px 8px;
@@ -798,7 +807,7 @@
     .tag{border-color:#000 !important;color:#000 !important;}
     .rr{color:#000;}
     .month-row td{background:#eee;color:#000;}
-    .dup, .edit, .del{display:none;}
+    .dup, .edit, .del, .shot{display:none;}
 
     body:not(.pr-data) table{display:none;}
     body:not(.pr-data) #emptyMsg{display:none;}
@@ -886,7 +895,8 @@
     </div>
     <div class="f-rr">
       <label for="fRR">R:R</label>
-      <input type="text" id="fRR" placeholder="1:2" autocomplete="off">
+      <input type="text" id="fRR" placeholder="1:2" autocomplete="off" aria-describedby="fRRWarn">
+      <div id="fRRWarn" class="rr-warn" style="display:none;" role="alert">Unrecognized format — won't count toward stats</div>
     </div>
     <button type="button" class="more-toggle" id="moreToggle"><span class="mt-chevron">›</span> Rules / Mistake / Emotion / Session</button>
     <div class="more-fields" id="moreFields">
@@ -950,6 +960,19 @@
         </div>
       </div>
     </div>
+    <div class="calc-box" id="screenshotBox">
+      <button type="button" class="more-toggle" id="screenshotToggle"><span class="mt-chevron">›</span> Attach chart screenshot</button>
+      <div class="more-fields hidden" id="screenshotFields">
+        <div class="lesson-field">
+          <label for="fScreenshot">Screenshot (optional — auto-resized to save space)</label>
+          <input type="file" id="fScreenshot" accept="image/*">
+          <div id="screenshotPreviewWrap" style="display:none;margin-top:8px;">
+            <img id="screenshotPreview" alt="Attached chart screenshot preview" style="max-width:160px;max-height:120px;border:1px solid var(--line);border-radius:2px;display:block;">
+            <button type="button" id="screenshotRemove" style="margin-top:6px;background:transparent;border:1px solid var(--line);color:var(--dim);padding:5px 10px;font-family:var(--mono);font-size:10px;border-radius:2px;cursor:pointer;">Remove image</button>
+          </div>
+        </div>
+      </div>
+    </div>
     <button type="submit" class="addbtn" id="submitBtn">+ Add</button>
   </form>
   <p style="font-size:10px;color:var(--dim);margin:6px 2px 18px;">R:R format: <b style="color:var(--ink);">1:2</b> (risk:reward) — a plain number like <b style="color:var(--ink);">2</b> works too. Leave blank until known.</p>
@@ -1007,6 +1030,9 @@
       <option value="newest">Newest first</option>
       <option value="oldest">Oldest first</option>
       <option value="asset">Asset A–Z</option>
+      <option value="pending">Pending first</option>
+      <option value="result">Result (hit → miss)</option>
+      <option value="rr">R:R (high → low)</option>
     </select>
     <select id="tagFilter" aria-label="Filter trades">
       <option value="">All trades</option>
@@ -1068,6 +1094,7 @@
   </div>
   <p id="backupReminder" style="display:none;font-size:10px;color:var(--accent);margin:8px 2px 0;letter-spacing:0.02em;"></p>
   <p style="font-size:10px;color:var(--dim);margin:8px 2px 0;letter-spacing:0.02em;">Updating to a new version of this file? Tap <b style="color:var(--ink);">Backup JSON</b> first, then open the new file and tap <b style="color:var(--ink);">Restore JSON</b> to bring your trades back — no re-entry needed.</p>
+  <p style="font-size:10px;color:var(--dim);margin:6px 2px 0;letter-spacing:0.02em;">This journal lives only in this browser on this device — nothing syncs automatically. To use it on another device or browser, <b style="color:var(--ink);">Backup JSON</b> here and <b style="color:var(--ink);">Restore JSON</b> there.</p>
   <input type="file" id="fileImport" accept="application/json" style="display:none;">
 
 </div>
@@ -1158,6 +1185,15 @@
     <div id="infoBody" style="font-size:12px;line-height:1.7;color:var(--ink);"></div>
   </div>
 </div>
+<div id="shotOverlay" class="report-overlay" style="display:none;">
+  <div class="report-panel" style="max-width:720px;padding:12px;">
+    <div class="report-head" style="border-bottom:none;padding-bottom:0;margin-bottom:8px;">
+      <h2 style="font-size:11px;">CHART<span>_</span> SCREENSHOT</h2>
+      <button id="shotClose" class="report-close">✕</button>
+    </div>
+    <img id="shotImg" alt="Trade chart screenshot" style="width:100%;height:auto;border-radius:2px;display:block;">
+  </div>
+</div>
 <div id="toast" class="toast" style="display:none;"></div>
 
 <script>
@@ -1190,6 +1226,15 @@ const fDate = document.getElementById('fDate');
 const fDir = document.getElementById('fDir');
 const fResult = document.getElementById('fResult');
 const fRR = document.getElementById('fRR');
+const fRRWarn = document.getElementById('fRRWarn');
+function validateRRInput(){
+  const val = fRR.value.trim();
+  const bad = val !== '' && parseRR(val) === null;
+  fRRWarn.style.display = bad ? 'block' : 'none';
+  fRR.classList.toggle('rr-invalid', bad);
+}
+fRR.addEventListener('input', validateRRInput);
+fRR.addEventListener('blur', validateRRInput);
 const searchBox = document.getElementById('searchBox');
 const dateFrom = document.getElementById('dateFrom');
 const dateTo = document.getElementById('dateTo');
@@ -1248,6 +1293,83 @@ lessonToggle.addEventListener('click', ()=>{
   lessonFields.classList.toggle('hidden');
   lessonToggle.classList.toggle('open', !lessonFields.classList.contains('hidden'));
 });
+
+// ---- chart screenshot attachment (resized client-side to keep localStorage lean) ----
+const screenshotToggle = document.getElementById('screenshotToggle');
+const screenshotFields = document.getElementById('screenshotFields');
+const fScreenshot = document.getElementById('fScreenshot');
+const screenshotPreviewWrap = document.getElementById('screenshotPreviewWrap');
+const screenshotPreview = document.getElementById('screenshotPreview');
+const screenshotRemove = document.getElementById('screenshotRemove');
+let pendingScreenshot = null; // data URL staged for the next save, or null if untouched/removed
+const SCREENSHOT_MAX_DIM = 900; // px, longest side — keeps a typical chart under ~150-250KB as JPEG
+
+screenshotToggle.addEventListener('click', ()=>{
+  screenshotFields.classList.toggle('hidden');
+  screenshotToggle.classList.toggle('open', !screenshotFields.classList.contains('hidden'));
+});
+
+function setScreenshotPreview(dataUrl){
+  if(dataUrl){
+    screenshotPreview.src = dataUrl;
+    screenshotPreviewWrap.style.display = 'block';
+  } else {
+    screenshotPreview.src = '';
+    screenshotPreviewWrap.style.display = 'none';
+  }
+}
+
+fScreenshot.addEventListener('change', ()=>{
+  const file = fScreenshot.files[0];
+  if(!file) return;
+  if(!file.type.startsWith('image/')){
+    showToast('That file doesn\'t look like an image', null, 3000);
+    fScreenshot.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (evt)=>{
+    const img = new Image();
+    img.onload = ()=>{
+      let {width, height} = img;
+      if(width > SCREENSHOT_MAX_DIM || height > SCREENSHOT_MAX_DIM){
+        const scale = SCREENSHOT_MAX_DIM / Math.max(width, height);
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      pendingScreenshot = canvas.toDataURL('image/jpeg', 0.8);
+      setScreenshotPreview(pendingScreenshot);
+      fScreenshot.value = '';
+    };
+    img.onerror = ()=>{ showToast('Could not read that image', null, 3000); fScreenshot.value = ''; };
+    img.src = evt.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+screenshotRemove.addEventListener('click', ()=>{
+  pendingScreenshot = 'REMOVE';
+  setScreenshotPreview(null);
+});
+
+function resetScreenshotField(){
+  pendingScreenshot = null;
+  setScreenshotPreview(null);
+  fScreenshot.value = '';
+}
+
+document.getElementById('shotClose').addEventListener('click', ()=> document.getElementById('shotOverlay').style.display = 'none');
+document.getElementById('shotOverlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'shotOverlay') document.getElementById('shotOverlay').style.display = 'none';
+});
+function openScreenshot(dataUrl){
+  document.getElementById('shotImg').src = dataUrl;
+  document.getElementById('shotOverlay').style.display = 'flex';
+}
 
 // ---- settings (account size, risk %, weekly target) ----
 const SETTINGS_KEY = 'ledger_settings_v1';
@@ -1331,11 +1453,14 @@ document.getElementById('infoOverlay').addEventListener('click', (e)=>{
 // ---- add to home screen ----
 document.getElementById('btnHomeScreen').addEventListener('click', ()=>{
   const ua = navigator.userAgent;
+  const isIpadOnMacUA = /Macintosh/.test(ua) && navigator.maxTouchPoints > 1; // iPadOS Safari often reports as desktop Mac
   let msg;
-  if(/iPhone|iPad|iPod/.test(ua)){
+  if(/iPhone|iPad|iPod/.test(ua) || isIpadOnMacUA){
     msg = 'In Safari: tap the <b>Share</b> icon, then <b>"Add to Home Screen"</b>.';
   } else if(/Android/.test(ua)){
     msg = 'In Chrome: tap the <b>⋮</b> menu, then <b>"Add to Home screen"</b> or <b>"Install app"</b>.';
+  } else if(/Chrome|Edg/.test(ua)){
+    msg = 'In Chrome/Edge on desktop: open the <b>⋮</b> menu → <b>"Save and share"</b> → <b>"Install page as app"</b> (or look for an install icon in the address bar). On a phone, use its browser menu instead.';
   } else {
     msg = 'Open this file in your phone\'s browser, then use its menu to <b>"Add to Home Screen"</b>.';
   }
@@ -1377,9 +1502,16 @@ rulesNoBtn.addEventListener('click', ()=>setRulesFollowed(rulesFollowedState===f
 document.getElementById('dateNow').textContent = new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'});
 fDate.valueAsDate = new Date();
 
+let quotaWarnShown = false;
 function save(){
   try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(trades));
+    const payload = JSON.stringify(trades);
+    // Soft heads-up before we actually hit the wall — most browsers cap localStorage around 5-10MB per origin.
+    if(!quotaWarnShown && payload.length > 4 * 1024 * 1024){
+      quotaWarnShown = true;
+      showToast('⚠ Your trade log is getting large (' + Math.round(payload.length/1024/1024) + 'MB) — consider exporting a backup and trimming old chart screenshots.', null, 7000);
+    }
+    localStorage.setItem(STORAGE_KEY, payload);
     return true;
   }catch(err){
     showToast('⚠ Save failed — storage full or blocked. This change may not persist.', null, 6000);
@@ -1464,10 +1596,28 @@ function render(){
     sorted.sort((a,b)=> a.date.localeCompare(b.date) || a.serial - b.serial);
   } else if(sortMode === 'asset'){
     sorted.sort((a,b)=> a.asset.localeCompare(b.asset));
+  } else if(sortMode === 'pending'){
+    sorted.sort((a,b)=> {
+      const pa = a.result === 'pending' ? 0 : 1;
+      const pb = b.result === 'pending' ? 0 : 1;
+      return pa - pb || b.date.localeCompare(a.date);
+    });
+  } else if(sortMode === 'result'){
+    const rank = {hit:0, breakeven:1, miss:2, pending:3};
+    sorted.sort((a,b)=> (rank[a.result]??4) - (rank[b.result]??4) || b.date.localeCompare(a.date));
+  } else if(sortMode === 'rr'){
+    sorted.sort((a,b)=>{
+      const ra = parseRR(a.rr), rb = parseRR(b.rr);
+      if(ra === null && rb === null) return b.date.localeCompare(a.date);
+      if(ra === null) return 1;
+      if(rb === null) return -1;
+      return rb - ra;
+    });
   }
 
-  // group by month (skip grouping entirely if sorting by asset — grouping only makes sense chronologically)
-  if(sortMode === 'asset'){
+  // group by month (skip grouping entirely for sorts where date order isn't the primary axis — grouping only makes sense chronologically)
+  const ungroupedSorts = ['asset','pending','result','rr'];
+  if(ungroupedSorts.includes(sortMode)){
     sorted.forEach(t => tbody.appendChild(rowEl(t)));
   } else {
     const groups = new Map();
@@ -1517,6 +1667,7 @@ function rowEl(t){
     <td class="rr rr-edit" data-id="${t.id}" title="Tap to set R:R" role="button" tabindex="0" aria-label="Risk to reward ${t.rr ? escapeHtml(t.rr) : 'not set'}. Tap to edit.">${t.rr ? escapeHtml(t.rr) : '—'}</td>
     <td>
       <div class="row-actions">
+        ${t.screenshot ? `<button class="shot" data-id="${t.id}" title="View chart screenshot" aria-label="View chart screenshot for ${escapeHtml(t.asset)}">🖼</button>` : ''}
         <button class="dup" data-id="${t.id}" title="Duplicate" aria-label="Duplicate trade ${escapeHtml(t.asset)}">⧉</button>
         <button class="edit" data-id="${t.id}" title="Edit" aria-label="Edit trade ${escapeHtml(t.asset)}">✎</button>
         <button class="del" data-id="${t.id}" title="Delete" aria-label="Delete trade ${escapeHtml(t.asset)}">✕</button>
@@ -2117,6 +2268,12 @@ function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
+// Prefer a real UUID when available; fall back for older browsers/insecure contexts.
+function genId(){
+  if(window.crypto && typeof window.crypto.randomUUID === 'function') return window.crypto.randomUUID();
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+}
+
 function formatDate(d){
   const dt = new Date(d + 'T00:00:00');
   if(isNaN(dt)) return d;
@@ -2141,15 +2298,22 @@ document.getElementById('tradeForm').addEventListener('submit', function(e){
   const wasEditing = editingId !== null;
   if(editingId !== null){
     const t = trades.find(tr=>tr.id === editingId);
-    if(t) Object.assign(t, data);
+    if(t){
+      Object.assign(t, data);
+      if(pendingScreenshot === 'REMOVE') delete t.screenshot;
+      else if(pendingScreenshot) t.screenshot = pendingScreenshot;
+    }
     exitEditMode();
   } else {
-    trades.push({ id: Date.now() + Math.random(), serial: nextSerial(), ...data });
+    if(pendingScreenshot && pendingScreenshot !== 'REMOVE') data.screenshot = pendingScreenshot;
+    trades.push({ id: genId(), serial: nextSerial(), ...data });
   }
+  resetScreenshotField();
   save();
   showToast(wasEditing ? 'Trade updated' : 'Trade added', null, 1800);
   fAsset.value = '';
   fRR.value = '';
+  validateRRInput();
   fRR.placeholder = '1:2';
   fDate.valueAsDate = new Date();
   fDir.value = 'long';
@@ -2180,6 +2344,7 @@ function enterEditMode(id){
   fDir.value = t.dir;
   fResult.value = t.result;
   fRR.value = t.rr || '';
+  validateRRInput();
   fSetup.value = t.setup || '';
   const mistakeOptions = Array.from(fMistake.options).map(o=>o.value);
   if(t.mistake && !mistakeOptions.includes(t.mistake)){
@@ -2204,6 +2369,9 @@ function enterEditMode(id){
   fSession.value = t.session || '';
   fLesson.value = t.lesson || '';
   setRulesFollowed(t.rulesFollowed === undefined ? null : t.rulesFollowed);
+  pendingScreenshot = null;
+  setScreenshotPreview(t.screenshot || null);
+  if(t.screenshot) screenshotFields.classList.remove('hidden');
   if(t.mistake || t.emotion || t.session || t.setup || (t.rulesFollowed !== undefined && t.rulesFollowed !== null)){
     setMoreOpen(true);
   }
@@ -2227,6 +2395,7 @@ document.getElementById('btnCancelEdit').addEventListener('click', ()=>{
   exitEditMode();
   fAsset.value = '';
   fRR.value = '';
+  validateRRInput();
   fRR.placeholder = '1:2';
   fDate.valueAsDate = new Date();
   fDir.value = 'long';
@@ -2241,12 +2410,19 @@ document.getElementById('btnCancelEdit').addEventListener('click', ()=>{
   fSession.value = '';
   fLesson.value = '';
   setRulesFollowed(null);
+  resetScreenshotField();
   render();
 });
 
 tbody.addEventListener('click', function(e){
+  if(e.target.classList.contains('shot')){
+    const id = e.target.dataset.id;
+    const t = trades.find(tr=>tr.id === id);
+    if(t && t.screenshot) openScreenshot(t.screenshot);
+    return;
+  }
   if(e.target.classList.contains('dup')){
-    const id = Number(e.target.dataset.id);
+    const id = e.target.dataset.id;
     const t = trades.find(tr=>tr.id === id);
     if(t){
       fAsset.value = t.asset;
@@ -2262,11 +2438,11 @@ tbody.addEventListener('click', function(e){
     return;
   }
   if(e.target.classList.contains('edit')){
-    enterEditMode(Number(e.target.dataset.id));
+    enterEditMode(e.target.dataset.id);
     return;
   }
   if(e.target.classList.contains('del')){
-    const id = Number(e.target.dataset.id);
+    const id = e.target.dataset.id;
     if(id === editingId) exitEditMode();
     const idx = trades.findIndex(t=>t.id === id);
     if(idx === -1) return;
@@ -2277,7 +2453,7 @@ tbody.addEventListener('click', function(e){
     showUndoToast(deleted, idx);
   }
   if(e.target.classList.contains('result-tag')){
-    const id = Number(e.target.dataset.id);
+    const id = e.target.dataset.id;
     const t = trades.find(tr=>tr.id === id);
     if(t){
       const cycle = {pending:'hit', hit:'miss', miss:'breakeven', breakeven:'pending'};
@@ -2287,7 +2463,7 @@ tbody.addEventListener('click', function(e){
     }
   }
   if(e.target.classList.contains('rr-edit') && !e.target.classList.contains('editing')){
-    const id = Number(e.target.dataset.id);
+    const id = e.target.dataset.id;
     const t = trades.find(tr=>tr.id === id);
     if(!t) return;
     const td = e.target;
@@ -2637,13 +2813,14 @@ fileImport.addEventListener('change', function(e){
         if(!proceed){ fileImport.value = ''; return; }
       }
       const mode = confirm('Click OK to MERGE with existing trades, or Cancel to REPLACE all existing trades with this backup.');
+      const previousTrades = trades; // kept as-is (not mutated below) so we can offer Undo either way
       if(mode){
         // merge: avoid id and serial collisions, keep original serials where possible
         const existingIds = new Set(trades.map(t=>t.id));
         const existingSerials = new Set(trades.map(t=>t.serial));
         let nextS = trades.length ? Math.max(...trades.map(t=>Number(t.serial)||0)) + 1 : 1;
         validTrades.forEach(t=>{
-          if(t.id === undefined || t.id === null || existingIds.has(t.id)){ t.id = Date.now() + Math.random(); }
+          if(t.id === undefined || t.id === null || existingIds.has(t.id)){ t.id = genId(); }
           existingIds.add(t.id);
           if(typeof t.serial !== 'number' || existingSerials.has(t.serial)){ t.serial = nextS++; }
           existingSerials.add(t.serial);
@@ -2654,14 +2831,21 @@ fileImport.addEventListener('change', function(e){
         let maxS = 0;
         validTrades.forEach(t=>{ if(typeof t.serial === 'number') maxS = Math.max(maxS, t.serial); });
         validTrades.forEach(t=>{
-          if(t.id === undefined || t.id === null) t.id = Date.now() + Math.random();
+          if(t.id === undefined || t.id === null) t.id = genId();
           if(typeof t.serial !== 'number'){ maxS++; t.serial = maxS; }
         });
         trades = validTrades;
       }
       save();
       render();
-      alert(`Imported ${validTrades.length} trade${validTrades.length===1?'':'s'}.`);
+      const importMsg = mode
+        ? `Imported ${validTrades.length} trade${validTrades.length===1?'':'s'} (merged)`
+        : `Imported ${validTrades.length} trade${validTrades.length===1?'':'s'} (replaced ${previousTrades.length} existing)`;
+      showToast(importMsg, ()=>{
+        trades = previousTrades;
+        save();
+        render();
+      }, 8000);
     } catch(err){
       alert('Could not read this file — make sure it\'s a valid backup JSON.');
     }
