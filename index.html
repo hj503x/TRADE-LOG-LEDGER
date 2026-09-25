@@ -87,6 +87,11 @@
     top:0;
     z-index:20;
     background:var(--bg);
+    transition:box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+  .stats.is-stuck{
+    box-shadow:0 4px 10px rgba(0,0,0,0.25);
+    border-color:var(--dim);
   }
   .stat{
     flex:1;
@@ -193,6 +198,11 @@
   tbody tr:hover{background:rgba(255,255,255,0.02);}
   tbody tr.row-pending{background:rgba(216,178,106,0.04);}
   tbody tr.row-pending td:first-child{border-left:2px solid var(--accent);}
+  tbody tr.row-flash{animation:rowFlash 1.6s ease;}
+  @keyframes rowFlash{
+    0%{background:rgba(216,178,106,0.22);}
+    100%{background:transparent;}
+  }
   td.num{color:var(--dim);}
   .tag{
     display:inline-block;
@@ -209,8 +219,9 @@
   .tag.miss{color:var(--miss);border-color:var(--miss);}
   .tag.breakeven{color:var(--accent);border-color:var(--accent);}
   .tag.pending{color:var(--dim);border-color:var(--dim);}
-  .tag.result-tag{cursor:pointer;}
+  .tag.result-tag{cursor:pointer;border-style:dashed;padding-right:5px;}
   .tag.result-tag:hover{opacity:0.75;}
+  .tag.result-tag::after{content:'⟳';margin-left:5px;font-size:8px;opacity:0.6;}
   .rr{color:var(--accent);}
   .rr-edit{cursor:pointer;}
   .rr-edit:hover{opacity:0.75;}
@@ -245,11 +256,13 @@
     font-size:13px;
   }
   .dup:hover{color:#8fb5d8;}
-  .row-actions{display:flex;gap:4px;}
+  .row-actions{display:flex;gap:6px;}
   .row-actions button{
-    padding:8px 8px;
-    font-size:14px;
+    padding:10px 10px;
+    font-size:15px;
     border-radius:3px;
+    min-width:38px;
+    min-height:38px;
   }
   .row-actions button:active{background:rgba(255,255,255,0.08);}
   .empty{
@@ -273,12 +286,18 @@
     padding:8px 14px;
   }
   .actions button:hover{color:var(--ink);border-color:var(--dim);}
+  .action-primary{color:var(--ink);}
+  .more-actions{margin-top:0;padding-top:10px;border-top:1px dashed var(--line);}
+  .action-danger{color:var(--miss);border-color:var(--miss);opacity:0.85;}
+  .action-danger:hover{color:var(--miss);border-color:var(--miss);opacity:1;background:rgba(193,90,90,0.08);}
 
-  .toolbar{
+  .toolbar{margin-bottom:12px;}
+  .toolbar-row1{display:flex;gap:8px;}
+  .toolbar-extra{
     display:flex;
     gap:8px;
-    margin-bottom:12px;
     flex-wrap:wrap;
+    margin-top:8px;
   }
   .toolbar input, .toolbar select{
     background:var(--panel);
@@ -290,9 +309,35 @@
     border-radius:2px;
     outline:none;
   }
-  .toolbar input{flex:1;min-width:120px;}
-  .toolbar select{min-width:110px;}
+  .toolbar-row1 input{flex:1;min-width:120px;}
+  .toolbar-extra input, .toolbar-extra select{flex:1;min-width:110px;}
   .toolbar input:focus, .toolbar select:focus{border-color:var(--accent);}
+  .filters-toggle{
+    background:var(--panel);
+    border:1px solid var(--line);
+    color:var(--dim);
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:0.04em;
+    padding:7px 12px;
+    border-radius:2px;
+    white-space:nowrap;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .filters-toggle:hover{color:var(--ink);border-color:var(--dim);}
+  .filters-toggle.active{color:var(--accent);border-color:var(--accent);}
+  .filters-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block;}
+  @media (min-width:641px){
+    .filters-toggle{display:none;}
+    .toolbar-extra{display:flex !important;}
+  }
+  @media (max-width:640px){
+    .toolbar-extra{display:none;}
+    .toolbar-extra.open{display:flex;}
+    .toolbar-extra select, .toolbar-extra input{min-width:0;flex:1 1 45%;}
+  }
 
   .streak-banner{
     background:rgba(193,90,90,0.08);
@@ -324,6 +369,18 @@
   .calc-box .more-toggle{border:none;padding:2px 0;margin:0;}
   .calc-box .more-fields{padding-top:10px;}
   form .calc-box{grid-column:1 / -1;}
+  .tools-wrap{padding-top:10px;}
+  .tools-wrap.hidden{display:none;}
+  .tools-wrap:not(.hidden){animation:fadeSlideIn 0.18s ease;}
+  .tools-section-label{
+    font-size:9px;
+    color:var(--dim);
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    margin-bottom:8px;
+    padding-bottom:6px;
+    border-bottom:1px solid var(--line);
+  }
   .target-track{
     height:8px;
     background:var(--panel);
@@ -785,6 +842,7 @@
     .more-fields{grid-template-columns:1fr 1fr;}
     .addbtn{grid-column:1 / span 2;padding:12px 0;}
     table{display:block;overflow-x:auto;}
+    thead th:first-child, tbody td:first-child{display:none;}
   }
 
   @media print{
@@ -844,7 +902,8 @@
 
   <div id="storageWarning" class="streak-banner" style="display:none;">⚠ Your browser is blocking local storage (private/incognito mode, or storage disabled). Trades you log now will <b>not be saved</b> once you close this page. Switch to normal browsing mode to keep your data.</div>
 
-  <div class="stats">
+  <div id="stickySentinel" style="height:1px;"></div>
+  <div class="stats" id="statsBar">
     <div class="stat"><div class="n" id="statTotal">0</div><div class="l">Trades</div></div>
     <div class="stat hitcolor"><div class="n"><span id="statHitRate">—</span><span id="hitRateTrend" class="trend-arrow"></span></div><div class="l">Hit Rate</div></div>
     <div class="stat"><div class="n" id="statAvgRR">—</div><div class="l">Plan R:R</div></div>
@@ -954,42 +1013,42 @@
   </form>
   <p style="font-size:10px;color:var(--dim);margin:6px 2px 18px;">R:R format: <b style="color:var(--ink);">1:2</b> (risk:reward) — a plain number like <b style="color:var(--ink);">2</b> works too. Leave blank until known.</p>
 
-  <div class="calc-box" id="calcBox">
-    <button type="button" class="more-toggle" id="calcToggle"><span class="mt-chevron">›</span> Position size calculator</button>
-    <div class="more-fields hidden" id="calcFields">
-      <div>
-        <label for="calcAccount">Account size</label>
-        <input type="number" id="calcAccount" placeholder="e.g. 1000">
+  <div class="calc-box" id="toolsBox">
+    <button type="button" class="more-toggle" id="toolsToggle"><span class="mt-chevron">›</span> Tools: position size · weekly target</button>
+    <div class="tools-wrap hidden" id="toolsFields">
+      <div class="tools-section-label">Position size calculator</div>
+      <div class="more-fields" id="calcFields" style="padding-top:0;">
+        <div>
+          <label for="calcAccount">Account size</label>
+          <input type="number" id="calcAccount" placeholder="e.g. 1000">
+        </div>
+        <div>
+          <label for="calcRiskPct">Risk %</label>
+          <input type="number" step="0.1" id="calcRiskPct" placeholder="e.g. 1">
+        </div>
+        <div>
+          <label for="calcStop">Stop distance (price units)</label>
+          <input type="number" step="0.0001" id="calcStop" placeholder="e.g. 5.5">
+        </div>
+        <div>
+          <label for="calcLotSize">Contract/lot size</label>
+          <input type="number" id="calcLotSize" placeholder="e.g. 100000">
+        </div>
+        <div>
+          <label for="calcConvRate" title="Only needed if the pair's quote currency isn't your account currency (e.g. account in USD, trading EURJPY)">Quote→acct rate <span style="opacity:.6;">(optional)</span></label>
+          <input type="number" step="0.0001" id="calcConvRate" placeholder="leave blank if same currency">
+        </div>
+        <div class="lesson-field">
+          <label for="calcResult">Suggested size</label>
+          <input type="text" id="calcResult" readonly placeholder="Enter account size, risk %, and stop distance">
+        </div>
       </div>
-      <div>
-        <label for="calcRiskPct">Risk %</label>
-        <input type="number" step="0.1" id="calcRiskPct" placeholder="e.g. 1">
-      </div>
-      <div>
-        <label for="calcStop">Stop distance (price units)</label>
-        <input type="number" step="0.0001" id="calcStop" placeholder="e.g. 5.5">
-      </div>
-      <div>
-        <label for="calcLotSize">Contract/lot size</label>
-        <input type="number" id="calcLotSize" placeholder="e.g. 100000">
-      </div>
-      <div>
-        <label for="calcConvRate" title="Only needed if the pair's quote currency isn't your account currency (e.g. account in USD, trading EURJPY)">Quote→acct rate <span style="opacity:.6;">(optional)</span></label>
-        <input type="number" step="0.0001" id="calcConvRate" placeholder="leave blank if same currency">
-      </div>
-      <div class="lesson-field">
-        <label for="calcResult">Suggested size</label>
-        <input type="text" id="calcResult" readonly placeholder="Enter account size, risk %, and stop distance">
-      </div>
-    </div>
-  </div>
-
-  <div class="calc-box" id="targetBox">
-    <button type="button" class="more-toggle" id="targetToggle"><span class="mt-chevron">›</span> Weekly R target</button>
-    <div class="more-fields hidden" id="targetFields">
-      <div>
-        <label for="fWeeklyTarget">Weekly target (R)</label>
-        <input type="number" step="0.5" id="fWeeklyTarget" placeholder="e.g. 5">
+      <div class="tools-section-label" style="margin-top:14px;">Weekly R target</div>
+      <div class="more-fields" id="targetFields" style="padding-top:0;">
+        <div>
+          <label for="fWeeklyTarget">Weekly target (R)</label>
+          <input type="number" step="0.5" id="fWeeklyTarget" placeholder="e.g. 5">
+        </div>
       </div>
     </div>
   </div>
@@ -1000,43 +1059,48 @@
   <div id="streakBanner" style="display:none;"></div>
 
   <div class="toolbar">
-    <input type="text" id="searchBox" placeholder="Search asset, setup, notes..." aria-label="Search by asset, setup, or notes">
-    <input type="date" id="dateFrom" aria-label="From date" style="max-width:130px;">
-    <input type="date" id="dateTo" aria-label="To date" style="max-width:130px;">
-    <select id="sortSelect" aria-label="Sort trades">
-      <option value="newest">Newest first</option>
-      <option value="oldest">Oldest first</option>
-      <option value="asset">Asset A–Z</option>
-    </select>
-    <select id="tagFilter" aria-label="Filter trades">
-      <option value="">All trades</option>
-      <optgroup label="Rules">
-        <option value="rules:yes">Rules followed</option>
-        <option value="rules:no">Rules broken</option>
-      </optgroup>
-      <optgroup label="Session">
-        <option value="session:London">London</option>
-        <option value="session:New York">New York</option>
-        <option value="session:Asian">Asian</option>
-        <option value="session:Overlap">Overlap</option>
-      </optgroup>
-      <optgroup label="Mistake">
-        <option value="mistake:Oversized">Oversized</option>
-        <option value="mistake:Entered early">Entered early</option>
-        <option value="mistake:Moved stop">Moved stop</option>
-        <option value="mistake:Revenge trade">Revenge trade</option>
-        <option value="mistake:FOMO entry">FOMO entry</option>
-        <option value="mistake:Ignored plan">Ignored plan</option>
-      </optgroup>
-      <optgroup label="Emotion">
-        <option value="emotion:Calm">Calm</option>
-        <option value="emotion:Confident">Confident</option>
-        <option value="emotion:FOMO">FOMO</option>
-        <option value="emotion:Bored">Bored</option>
-        <option value="emotion:Tilted">Tilted</option>
-        <option value="emotion:Anxious">Anxious</option>
-      </optgroup>
-    </select>
+    <div class="toolbar-row1">
+      <input type="text" id="searchBox" placeholder="Search asset, setup, notes..." aria-label="Search by asset, setup, or notes">
+      <button type="button" id="filtersToggle" class="filters-toggle" aria-expanded="false" aria-controls="toolbarExtra">Filters<span id="filtersDot" class="filters-dot" style="display:none;"></span></button>
+    </div>
+    <div class="toolbar-extra" id="toolbarExtra">
+      <input type="date" id="dateFrom" aria-label="From date" style="max-width:130px;">
+      <input type="date" id="dateTo" aria-label="To date" style="max-width:130px;">
+      <select id="sortSelect" aria-label="Sort trades">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="asset">Asset A–Z</option>
+      </select>
+      <select id="tagFilter" aria-label="Filter trades">
+        <option value="">All trades</option>
+        <optgroup label="Rules">
+          <option value="rules:yes">Rules followed</option>
+          <option value="rules:no">Rules broken</option>
+        </optgroup>
+        <optgroup label="Session">
+          <option value="session:London">London</option>
+          <option value="session:New York">New York</option>
+          <option value="session:Asian">Asian</option>
+          <option value="session:Overlap">Overlap</option>
+        </optgroup>
+        <optgroup label="Mistake">
+          <option value="mistake:Oversized">Oversized</option>
+          <option value="mistake:Entered early">Entered early</option>
+          <option value="mistake:Moved stop">Moved stop</option>
+          <option value="mistake:Revenge trade">Revenge trade</option>
+          <option value="mistake:FOMO entry">FOMO entry</option>
+          <option value="mistake:Ignored plan">Ignored plan</option>
+        </optgroup>
+        <optgroup label="Emotion">
+          <option value="emotion:Calm">Calm</option>
+          <option value="emotion:Confident">Confident</option>
+          <option value="emotion:FOMO">FOMO</option>
+          <option value="emotion:Bored">Bored</option>
+          <option value="emotion:Tilted">Tilted</option>
+          <option value="emotion:Anxious">Anxious</option>
+        </optgroup>
+      </select>
+    </div>
   </div>
 
   <table>
@@ -1056,15 +1120,18 @@
   <div class="empty" id="emptyMsg" style="display:none;">No entries yet — log your first trade above.</div>
 
   <div class="actions">
-    <button id="btnReport">View Report</button>
-    <button id="btnCalendar">PnL Calendar</button>
-    <button id="btnPrint">Print / Save PDF</button>
+    <button id="btnReport" class="action-primary">View Report</button>
+    <button id="btnCalendar" class="action-primary">PnL Calendar</button>
+    <button id="btnPrint" class="action-primary">Print / Save PDF</button>
+    <button type="button" id="moreActionsToggle" class="action-primary" aria-expanded="false" aria-controls="moreActionsPanel">⋯ More</button>
+  </div>
+  <div class="actions more-actions" id="moreActionsPanel" style="display:none;">
     <button id="btnCSV">Export CSV</button>
     <button id="btnJSONExport">Backup JSON</button>
     <button id="btnShareBackup">Share Backup</button>
     <button id="btnJSONImport">Restore JSON</button>
     <button id="btnHomeScreen">Add to Home Screen</button>
-    <button id="btnClear">Clear All</button>
+    <button id="btnClear" class="action-danger">Clear All</button>
   </div>
   <p id="backupReminder" style="display:none;font-size:10px;color:var(--accent);margin:8px 2px 0;letter-spacing:0.02em;"></p>
   <p style="font-size:10px;color:var(--dim);margin:8px 2px 0;letter-spacing:0.02em;">Updating to a new version of this file? Tap <b style="color:var(--ink);">Backup JSON</b> first, then open the new file and tap <b style="color:var(--ink);">Restore JSON</b> to bring your trades back — no re-entry needed.</p>
@@ -1177,9 +1244,21 @@ try{
   trades = [];
 }
 let editingId = null;
+let flashRowId = null;
 
 if(!storageAvailable){
   document.getElementById('storageWarning').style.display = 'block';
+}
+
+// Sticky stats bar gets a shadow once it's actually pinned to the top,
+// so it stays legible against a busy scrolled table.
+const statsBar = document.getElementById('statsBar');
+const stickySentinel = document.getElementById('stickySentinel');
+if('IntersectionObserver' in window && statsBar && stickySentinel){
+  new IntersectionObserver(
+    ([entry]) => statsBar.classList.toggle('is-stuck', !entry.isIntersecting),
+    { threshold: 0 }
+  ).observe(stickySentinel);
 }
 
 const tbody = document.getElementById('tbody');
@@ -1254,18 +1333,18 @@ const SETTINGS_KEY = 'ledger_settings_v1';
 let settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
 function saveSettings(){ localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }
 
-const calcToggle = document.getElementById('calcToggle');
-const calcFields = document.getElementById('calcFields');
+const toolsToggle = document.getElementById('toolsToggle');
+const toolsFields = document.getElementById('toolsFields');
+toolsToggle.addEventListener('click', ()=>{
+  toolsFields.classList.toggle('hidden');
+  toolsToggle.classList.toggle('open', !toolsFields.classList.contains('hidden'));
+});
 const calcAccount = document.getElementById('calcAccount');
 const calcRiskPct = document.getElementById('calcRiskPct');
 const calcStop = document.getElementById('calcStop');
 const calcLotSize = document.getElementById('calcLotSize');
 const calcConvRate = document.getElementById('calcConvRate');
 const calcResult = document.getElementById('calcResult');
-calcToggle.addEventListener('click', ()=>{
-  calcFields.classList.toggle('hidden');
-  calcToggle.classList.toggle('open', !calcFields.classList.contains('hidden'));
-});
 calcAccount.value = settings.accountSize || '';
 calcRiskPct.value = settings.riskPct || '';
 calcLotSize.value = settings.lotSize || '';
@@ -1301,13 +1380,7 @@ function runCalc(){
 [calcAccount, calcRiskPct, calcStop, calcLotSize, calcConvRate].forEach(el=>el.addEventListener('input', runCalc));
 runCalc();
 
-const targetToggle = document.getElementById('targetToggle');
-const targetFields = document.getElementById('targetFields');
 const fWeeklyTarget = document.getElementById('fWeeklyTarget');
-targetToggle.addEventListener('click', ()=>{
-  targetFields.classList.toggle('hidden');
-  targetToggle.classList.toggle('open', !targetFields.classList.contains('hidden'));
-});
 fWeeklyTarget.value = settings.weeklyTarget || '';
 fWeeklyTarget.addEventListener('input', ()=>{
   settings.weeklyTarget = fWeeklyTarget.value;
@@ -1329,7 +1402,18 @@ document.getElementById('infoOverlay').addEventListener('click', (e)=>{
 });
 
 // ---- add to home screen ----
-document.getElementById('btnHomeScreen').addEventListener('click', ()=>{
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault();
+  deferredInstallPrompt = e;
+});
+document.getElementById('btnHomeScreen').addEventListener('click', async ()=>{
+  if(deferredInstallPrompt){
+    deferredInstallPrompt.prompt();
+    try{ await deferredInstallPrompt.userChoice; }catch(err){}
+    deferredInstallPrompt = null;
+    return;
+  }
   const ua = navigator.userAgent;
   let msg;
   if(/iPhone|iPad|iPod/.test(ua)){
@@ -1371,8 +1455,83 @@ function setRulesFollowed(val){
   rulesYesBtn.className = val === true ? 'on-yes' : '';
   rulesNoBtn.className = val === false ? 'on-no' : '';
 }
-rulesYesBtn.addEventListener('click', ()=>setRulesFollowed(rulesFollowedState===true ? null : true));
-rulesNoBtn.addEventListener('click', ()=>setRulesFollowed(rulesFollowedState===false ? null : false));
+rulesYesBtn.addEventListener('click', ()=>{ setRulesFollowed(rulesFollowedState===true ? null : true); scheduleDraftSave(); });
+rulesNoBtn.addEventListener('click', ()=>{ setRulesFollowed(rulesFollowedState===false ? null : false); scheduleDraftSave(); });
+
+// ---- unsaved draft protection ----
+// Guards against losing an in-progress new entry to a refresh, a killed tab,
+// or a phone back-swipe (all common on mobile, where beforeunload alone is unreliable).
+const DRAFT_KEY = 'ledger_draft_v1';
+let draftSaveTimer = null;
+
+function formHasContent(){
+  return !!(fAsset.value.trim() || fSetup.value.trim() || fMistake.value || fMistakeOther.value.trim()
+    || fEmotion.value || fEmotionOther.value.trim() || fSession.value || fLesson.value.trim()
+    || fRR.value.trim() || rulesFollowedState !== null);
+}
+
+function saveDraft(){
+  if(editingId !== null) return; // an in-progress edit is never drafted over
+  if(!formHasContent()){ localStorage.removeItem(DRAFT_KEY); return; }
+  try{
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({
+      asset: fAsset.value, date: fDate.value, dir: fDir.value, result: fResult.value, rr: fRR.value,
+      setup: fSetup.value, mistake: fMistake.value, mistakeOther: fMistakeOther.value,
+      emotion: fEmotion.value, emotionOther: fEmotionOther.value, session: fSession.value,
+      lesson: fLesson.value, rulesFollowed: rulesFollowedState
+    }));
+  }catch(err){ /* storage full or blocked — draft just won't persist */ }
+}
+function scheduleDraftSave(){
+  clearTimeout(draftSaveTimer);
+  draftSaveTimer = setTimeout(saveDraft, 400);
+}
+function clearDraft(){
+  try{ localStorage.removeItem(DRAFT_KEY); }catch(err){}
+}
+function resetFormFields(){
+  fAsset.value=''; fRR.value=''; fRR.placeholder='1:2'; fSetup.value='';
+  fMistake.value=''; fMistakeOther.value=''; fMistakeOther.style.display='none';
+  fEmotion.value=''; fEmotionOther.value=''; fEmotionOther.style.display='none';
+  fSession.value=''; fLesson.value='';
+  setRulesFollowed(null);
+}
+function restoreDraftIfAny(){
+  let raw;
+  try{ raw = localStorage.getItem(DRAFT_KEY); }catch(err){ return; }
+  if(!raw) return;
+  let d;
+  try{ d = JSON.parse(raw); }catch(err){ clearDraft(); return; }
+  if(!d) return;
+  fAsset.value = d.asset || '';
+  if(d.date) fDate.value = d.date;
+  if(d.dir) fDir.value = d.dir;
+  if(d.result) fResult.value = d.result;
+  fRR.value = d.rr || '';
+  fSetup.value = d.setup || '';
+  fMistake.value = d.mistake || '';
+  fMistakeOther.value = d.mistakeOther || '';
+  fMistakeOther.style.display = fMistake.value === 'Other' ? 'block' : 'none';
+  fEmotion.value = d.emotion || '';
+  fEmotionOther.value = d.emotionOther || '';
+  fEmotionOther.style.display = fEmotion.value === 'Other' ? 'block' : 'none';
+  fSession.value = d.session || '';
+  fLesson.value = d.lesson || '';
+  setRulesFollowed(d.rulesFollowed === undefined ? null : d.rulesFollowed);
+  if(!formHasContent()) return;
+  setMoreOpen(true);
+  showToast('Unsaved entry restored from last visit', ()=>{
+    clearDraft();
+    resetFormFields();
+  }, 8000, 'Discard');
+}
+document.getElementById('tradeForm').addEventListener('input', scheduleDraftSave);
+window.addEventListener('beforeunload', function(e){
+  if(editingId === null && formHasContent()){
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
 
 document.getElementById('dateNow').textContent = new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'});
 fDate.valueAsDate = new Date();
@@ -1467,8 +1626,11 @@ function render(){
   }
 
   // group by month (skip grouping entirely if sorting by asset — grouping only makes sense chronologically)
+  // Rows are batched into a fragment and inserted once, instead of one-by-one
+  // into the live table, to avoid a reflow per row on longer logs.
+  const frag = document.createDocumentFragment();
   if(sortMode === 'asset'){
-    sorted.forEach(t => tbody.appendChild(rowEl(t)));
+    sorted.forEach(t => frag.appendChild(rowEl(t)));
   } else {
     const groups = new Map();
     sorted.forEach(t=>{
@@ -1480,10 +1642,12 @@ function render(){
       const mrow = document.createElement('tr');
       mrow.className = 'month-row';
       mrow.innerHTML = `<td colspan="7">${key} <span class="mstats">${computeGroupStats(list)}</span></td>`;
-      tbody.appendChild(mrow);
-      list.forEach(t => tbody.appendChild(rowEl(t)));
+      frag.appendChild(mrow);
+      list.forEach(t => frag.appendChild(rowEl(t)));
     });
   }
+  tbody.appendChild(frag);
+  flashRowId = null;
 
   updateStats();
 }
@@ -1507,7 +1671,10 @@ function metaLine(t){
 
 function rowEl(t){
   const tr = document.createElement('tr');
-  if(t.result === 'pending') tr.className = 'row-pending';
+  const classes = [];
+  if(t.result === 'pending') classes.push('row-pending');
+  if(t.id === flashRowId) classes.push('row-flash');
+  if(classes.length) tr.className = classes.join(' ');
   tr.innerHTML = `
     <td class="num">${String(t.serial).padStart(3,'0')}</td>
     <td>${escapeHtml(t.asset)}${metaLine(t)}</td>
@@ -2139,31 +2306,24 @@ document.getElementById('tradeForm').addEventListener('submit', function(e){
     rulesFollowed: rulesFollowedState
   };
   const wasEditing = editingId !== null;
+  let newId;
   if(editingId !== null){
     const t = trades.find(tr=>tr.id === editingId);
     if(t) Object.assign(t, data);
+    newId = editingId;
     exitEditMode();
   } else {
-    trades.push({ id: Date.now() + Math.random(), serial: nextSerial(), ...data });
+    newId = Date.now() + Math.random();
+    trades.push({ id: newId, serial: nextSerial(), ...data });
   }
+  flashRowId = newId;
   save();
+  clearDraft();
   showToast(wasEditing ? 'Trade updated' : 'Trade added', null, 1800);
-  fAsset.value = '';
-  fRR.value = '';
-  fRR.placeholder = '1:2';
   fDate.valueAsDate = new Date();
   fDir.value = 'long';
   fResult.value = 'pending';
-  fSetup.value = '';
-  fMistake.value = '';
-  fMistakeOther.value = '';
-  fMistakeOther.style.display = 'none';
-  fEmotion.value = '';
-  fEmotionOther.value = '';
-  fEmotionOther.style.display = 'none';
-  fSession.value = '';
-  fLesson.value = '';
-  setRulesFollowed(null);
+  resetFormFields();
   fAsset.focus();
   render();
 });
@@ -2511,9 +2671,9 @@ window.addEventListener('afterprint', ()=>{
 });
 
 let toastTimer = null;
-function showToast(message, onUndo, duration){
+function showToast(message, onUndo, duration, actionLabel){
   const toast = document.getElementById('toast');
-  toast.innerHTML = onUndo ? `${message} <button id="undoBtn">Undo</button>` : message;
+  toast.innerHTML = onUndo ? `${message} <button id="undoBtn">${actionLabel || 'Undo'}</button>` : message;
   toast.style.display = 'flex';
   clearTimeout(toastTimer);
   if(onUndo){
@@ -2569,10 +2729,36 @@ document.getElementById('btnCSV').addEventListener('click', ()=>{
   URL.revokeObjectURL(url);
 });
 
-searchBox.addEventListener('input', render);
-dateFrom.addEventListener('change', render);
-dateTo.addEventListener('change', render);
+let searchDebounceTimer = null;
+searchBox.addEventListener('input', ()=>{
+  clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = setTimeout(render, 150);
+});
+dateFrom.addEventListener('change', ()=>{ render(); updateFiltersDot(); });
+dateTo.addEventListener('change', ()=>{ render(); updateFiltersDot(); });
 sortSelect.addEventListener('change', render);
+
+const moreActionsToggle = document.getElementById('moreActionsToggle');
+const moreActionsPanel = document.getElementById('moreActionsPanel');
+moreActionsToggle.addEventListener('click', ()=>{
+  const isOpen = moreActionsPanel.style.display !== 'none';
+  moreActionsPanel.style.display = isOpen ? 'none' : 'flex';
+  moreActionsToggle.setAttribute('aria-expanded', String(!isOpen));
+});
+
+const filtersToggle = document.getElementById('filtersToggle');
+const toolbarExtra = document.getElementById('toolbarExtra');
+filtersToggle.addEventListener('click', ()=>{
+  const isOpen = toolbarExtra.classList.toggle('open');
+  filtersToggle.setAttribute('aria-expanded', String(isOpen));
+});
+function updateFiltersDot(){
+  const active = !!(dateFrom.value || dateTo.value || tagFilter.value);
+  document.getElementById('filtersDot').style.display = active ? 'inline-block' : 'none';
+  filtersToggle.classList.toggle('active', active);
+}
+tagFilter.addEventListener('change', updateFiltersDot);
+updateFiltersDot();
 
 document.getElementById('btnJSONExport').addEventListener('click', ()=>{
   if(trades.length === 0) return;
@@ -2702,6 +2888,7 @@ document.getElementById('themeToggle').addEventListener('click', ()=>{
   applyTheme(current === 'dark' ? 'light' : 'dark');
 });
 
+restoreDraftIfAny();
 render();
 </script>
 </body>
