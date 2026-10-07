@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#14161b">
 <title>LEDGER — Trade Log</title>
 <style>
   :root{
@@ -15,7 +16,7 @@
     --miss: #c15a5a;
     --accent: #d8b26a;
     --mono: 'JetBrains Mono','SF Mono',Consolas,monospace;
-    --btn-text: #14161b;
+    --btn-text: #14161b; --hover: rgba(255,255,255,0.03);
     --long-c: #8fb5d8; --long-b: #3a5a78;
     --short-c: #d8a98f; --short-b: #785a3a;
   }
@@ -28,7 +29,7 @@
     --hit: #2f8f5b;
     --miss: #b23f3f;
     --accent: #9c6f1f;
-    --btn-text: #ffffff;
+    --btn-text: #ffffff; --hover: rgba(0,0,0,0.045);
     --long-c: #2c5a78; --long-b: #5f8fb0;
     --short-c: #7a4a26; --short-b: #b98860;
   }
@@ -185,7 +186,7 @@
     white-space:nowrap;
   }
   tbody td:nth-child(2){white-space:normal;}
-  tbody tr:hover{background:rgba(128,128,128,0.06);}
+  tbody tr:hover{background:var(--hover);}
   tbody tr.row-pending{background:rgba(216,178,106,0.04);}
   tbody tr.row-pending td:first-child{border-left:2px solid var(--accent);}
   td.num{color:var(--dim);}
@@ -229,14 +230,14 @@
     color:var(--dim);
     font-size:13px;
   }
-  .dup:hover{color:#8fb5d8;}
+  .dup:hover{color:var(--long-c);}
   .row-actions{display:flex;gap:4px;}
   .row-actions button{
     padding:8px 8px;
     font-size:14px;
     border-radius:3px;
   }
-  .row-actions button:active{background:rgba(255,255,255,0.08);}
+  .row-actions button:active{background:var(--hover);}
   .empty{
     text-align:center;
     color:var(--dim);
@@ -624,7 +625,7 @@
 
   @media print{
     body{background:#fff;color:#000;padding:0;}
-    form,.actions,.stats,.toolbar,#editBar,.breakdown,.toast,#targetBar,#exposureBanner,#streakBanner,#startHint,#backupReminder,.calc-box{display:none !important;}
+    form,.actions,.stats,.toolbar,#editBar,.breakdown,.toast{display:none;}
     .row-meta{color:#555;}
     header{border-color:#000;}
     header h1, header h1 span{color:#000;}
@@ -664,6 +665,59 @@
     body.pr-report .r-equity-line{stroke:#000;}
     body.pr-report .r-equity-zero{stroke:#ccc;}
   }
+
+  .qc{display:inline-flex;gap:4px;margin-left:6px;}
+  .qc-btn{background:transparent;border:1px solid var(--line);color:var(--dim);padding:3px 8px;font-size:10px;}
+  .qc-btn:hover{color:var(--ink);border-color:var(--dim);}
+  .sheet-head,#sheetBackdrop{display:none;}
+  .dlg{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:70;display:flex;align-items:center;justify-content:center;padding:16px;}
+  .dlg-box{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;width:100%;max-width:340px;}
+  .dlg-box p{margin:0 0 12px;font-size:13px;}
+  .dlg-box input{margin-bottom:12px;font-size:16px;}
+  .dlg-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+  .dlg-btns button{background:transparent;border:1px solid var(--line);color:var(--ink);padding:10px 14px;min-height:40px;}
+  .dlg-btns button.primary{background:var(--accent);border-color:var(--accent);color:var(--btn-text);font-weight:700;}
+  .dlg-btns button.c-hit{border-color:var(--hit);color:var(--hit);}
+  .dlg-btns button.c-miss{border-color:var(--miss);color:var(--miss);}
+  svg.r-equity{height:auto;aspect-ratio:560/120;}
+  .r-months{height:auto;min-height:100px;}
+  .r-month-lbl{text-align:center;line-height:1.3;}
+  @media (max-width:640px){
+    body{padding:16px 12px 90px;}
+    label,form label{font-size:11px;}
+    input,select,.toolbar input,.toolbar select{font-size:16px;padding:10px 8px;}
+    .theme-toggle{padding:10px 14px;}
+    .stat{padding:8px 6px;}.stat .n{font-size:14px;}.stat .l{font-size:9px;letter-spacing:0.04em;}
+    .row-meta,.row-lesson{font-size:11px;}
+    table{display:block;overflow:visible;}
+    thead{display:none;}
+    tbody{display:block;}
+    tbody tr{display:grid;grid-template-columns:34px auto auto 1fr auto;gap:4px 10px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--line);}
+    tbody td{padding:0;border:none;white-space:normal;}
+    tbody td:nth-child(1){grid-column:1;grid-row:1;}
+    tbody td:nth-child(2){grid-column:2/5;grid-row:1;font-size:14px;}
+    tbody td:nth-child(7){grid-column:5;grid-row:1;justify-self:end;}
+    tbody td:nth-child(3){grid-column:2;grid-row:2;}
+    tbody td:nth-child(4){grid-column:3;grid-row:2;}
+    tbody td:nth-child(5){grid-column:4;grid-row:2;}
+    tbody td:nth-child(6){grid-column:5;grid-row:2;justify-self:end;}
+    tbody tr.month-row{display:block;padding:0;}
+    .month-row td{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 10px;padding:8px;}
+    .month-row .mstats{float:none;}
+    .row-actions{gap:2px;}
+    .row-actions button{min-width:40px;min-height:40px;}
+    .row-actions .del{margin-left:10px;}
+    .qc-btn{padding:8px 10px;font-size:11px;}
+    #editBar{display:none !important;}
+    form{display:none;}
+    body.form-open form{display:grid;position:fixed;left:0;right:0;bottom:0;max-height:88vh;overflow-y:auto;z-index:55;margin:0;border-radius:14px 14px 0 0;padding:12px 12px calc(16px + env(safe-area-inset-bottom,0px));box-shadow:0 -8px 30px rgba(0,0,0,0.5);}
+    body.form-open #sheetBackdrop{display:block;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:54;}
+    body.form-open .fab-add{display:none;}
+    .sheet-head{display:flex;grid-column:1/-1;justify-content:space-between;align-items:center;font-weight:600;letter-spacing:0.08em;}
+    .sheet-head button{background:none;border:none;color:var(--dim);font-size:18px;min-width:40px;min-height:40px;}
+    #reportPeriod,#reportTagFilter{width:100%;margin-left:0;}
+    .fab-add{width:52px;height:52px;}
+  }
 </style>
 </head>
 <body>
@@ -680,7 +734,9 @@
   <div class="stats">
     <div class="stat"><div class="n" id="statTotal">0</div><div class="l">Trades</div></div>
     <div class="stat hitcolor"><div class="n"><span id="statHitRate">—</span><span id="hitRateTrend" class="trend-arrow"></span></div><div class="l">Hit Rate</div></div>
-    <div class="stat"><div class="n" id="statAvgRR">—</div><div class="l">Avg R:R</div></div>
+    <div class="stat"><div class="n" id="statAvgRR">—</div><div class="l">Avg win R</div></div>
+    <div class="stat"><div class="n" id="statNetR">—</div><div class="l">Net R</div></div>
+    <div class="stat"><div class="n" id="statExp">—</div><div class="l">Exp / trade</div></div>
   </div>
   <div class="breakdown" id="breakdown"></div>
   <div id="targetBar" style="display:none;"></div>
@@ -688,13 +744,14 @@
   <p id="startHint" style="display:none;font-size:11px;color:var(--accent);margin:0 2px 14px;letter-spacing:0.02em;">Log your first trade below to get started — Asset, Date, Direction, then hit +Add.</p>
 
   <form id="tradeForm">
+    <div class="sheet-head"><span id="sheetTitle">Log trade</span><button type="button" id="sheetClose" aria-label="Close">✕</button></div>
     <div class="f-serial">
       <label for="fSerial">No.</label>
       <input type="text" id="fSerial" readonly>
     </div>
     <div class="f-asset">
       <label for="fAsset">Asset</label>
-      <input type="text" id="fAsset" placeholder="XAUUSD" required autocomplete="off">
+      <input type="text" id="fAsset" placeholder="XAUUSD" required autocomplete="off" list="assetList"><datalist id="assetList"></datalist>
     </div>
     <div class="f-date">
       <label for="fDate">Date</label>
@@ -718,7 +775,7 @@
     </div>
     <div class="f-rr">
       <label for="fRR">R:R</label>
-      <input type="text" id="fRR" placeholder="1:2" autocomplete="off">
+      <input type="text" id="fRR" placeholder="1:2 or 2" autocomplete="off">
     </div>
     <button type="button" class="more-toggle" id="moreToggle">+ Rules / Mistake / Emotion / Session</button>
     <div class="more-fields" id="moreFields">
@@ -784,43 +841,7 @@
     </div>
     <button type="submit" class="addbtn" id="submitBtn">+ Add</button>
   </form>
-  <p style="font-size:10px;color:var(--dim);margin:6px 2px 18px;">R:R format: <b style="color:var(--ink);">1:2</b> (risk:reward) — a plain number like <b style="color:var(--ink);">2</b> works too. Leave blank until known.</p>
-
-  <div class="calc-box" id="calcBox">
-    <button type="button" class="more-toggle" id="calcToggle">+ Position size calculator</button>
-    <div class="more-fields hidden" id="calcFields">
-      <div>
-        <label for="calcAccount">Account size</label>
-        <input type="number" id="calcAccount" placeholder="e.g. 1000">
-      </div>
-      <div>
-        <label for="calcRiskPct">Risk %</label>
-        <input type="number" step="0.1" id="calcRiskPct" placeholder="e.g. 1">
-      </div>
-      <div>
-        <label for="calcStop">Stop distance (price units)</label>
-        <input type="number" step="0.0001" id="calcStop" placeholder="e.g. 5.5">
-      </div>
-      <div>
-        <label for="calcLotSize">Contract/lot size</label>
-        <input type="number" id="calcLotSize" placeholder="e.g. 100000">
-      </div>
-      <div class="lesson-field">
-        <label for="calcResult">Suggested size</label>
-        <input type="text" id="calcResult" readonly placeholder="Enter account size, risk %, and stop distance">
-      </div>
-    </div>
-  </div>
-
-  <div class="calc-box" id="targetBox">
-    <button type="button" class="more-toggle" id="targetToggle">+ Weekly R target</button>
-    <div class="more-fields hidden" id="targetFields">
-      <div>
-        <label for="fWeeklyTarget">Weekly target (R)</label>
-        <input type="number" step="0.5" id="fWeeklyTarget" placeholder="e.g. 5">
-      </div>
-    </div>
-  </div>
+  
   <div id="editBar" style="display:none;margin:-10px 0 18px;">
     <button id="btnCancelEdit" style="background:transparent;border:1px solid var(--line);color:var(--dim);padding:6px 12px;font-family:var(--mono);font-size:11px;border-radius:2px;cursor:pointer;">Cancel edit</button>
   </div>
@@ -892,11 +913,48 @@
     <button id="btnHomeScreen">Add to Home Screen</button>
     <button id="btnClear">Clear All</button>
   </div>
+  <div style="margin-top:22px;border-top:1px solid var(--line);padding-top:14px;font-size:11px;color:var(--dim);">Tools</div>
+  <div class="calc-box" id="calcBox">
+    <button type="button" class="more-toggle" id="calcToggle">+ Position size calculator</button>
+    <div class="more-fields hidden" id="calcFields">
+      <div>
+        <label for="calcAccount">Account size</label>
+        <input type="number" id="calcAccount" placeholder="e.g. 1000">
+      </div>
+      <div>
+        <label for="calcRiskPct">Risk %</label>
+        <input type="number" step="0.1" id="calcRiskPct" placeholder="e.g. 1">
+      </div>
+      <div>
+        <label for="calcStop">Stop distance (price units)</label>
+        <input type="number" step="0.0001" id="calcStop" placeholder="e.g. 5.5">
+      </div>
+      <div>
+        <label for="calcLotSize">Contract/lot size</label>
+        <input type="number" id="calcLotSize" placeholder="e.g. 100000">
+      </div>
+      <div class="lesson-field">
+        <label for="calcResult">Suggested size</label>
+        <input type="text" id="calcResult" readonly placeholder="Enter account size, risk %, and stop distance">
+      </div>
+    </div>
+  </div>
+
+  <div class="calc-box" id="targetBox">
+    <button type="button" class="more-toggle" id="targetToggle">+ Weekly R target</button>
+    <div class="more-fields hidden" id="targetFields">
+      <div>
+        <label for="fWeeklyTarget">Weekly target (R)</label>
+        <input type="number" step="0.5" id="fWeeklyTarget" placeholder="e.g. 5">
+      </div>
+    </div>
+  </div>
   <p id="backupReminder" style="display:none;font-size:10px;color:var(--accent);margin:8px 2px 0;letter-spacing:0.02em;"></p>
   <p style="font-size:10px;color:var(--dim);margin:8px 2px 0;letter-spacing:0.02em;">Updating to a new version of this file? Tap <b style="color:var(--ink);">Backup JSON</b> first, then open the new file and tap <b style="color:var(--ink);">Restore JSON</b> to bring your trades back — no re-entry needed.</p>
-  <input type="file" id="fileImport" accept=".json,application/json,text/plain" style="display:none;">
+  <input type="file" id="fileImport" accept="application/json" style="display:none;">
 
 </div>
+<div id="sheetBackdrop"></div>
 <button id="fabAdd" class="fab-add" title="Jump to add trade">+</button>
 <div id="reportOverlay" class="report-overlay" style="display:none;">
   <div class="report-panel">
@@ -954,49 +1012,23 @@
 
 <script>
 const STORAGE_KEY = 'ledger_trades_v1';
-function safeParse(key, fallback){
-  try{ const v = JSON.parse(localStorage.getItem(key)); return v == null ? fallback : v; }
-  catch(e){ return fallback; }
+function safeLoad(key, fb){
+  const raw = localStorage.getItem(key);
+  if(!raw) return fb;
+  try{ const v = JSON.parse(raw); return v == null ? fb : v; }
+  catch(e){ try{ localStorage.setItem(key + '_corrupt', raw); }catch(_){} return fb; }
 }
-function normalizeTrade(t){
-  if(!t || typeof t !== 'object') return null;
-  const asset = String(t.asset == null ? '' : t.asset).trim().toUpperCase();
-  const date = /^\d{4}-\d{2}-\d{2}$/.test(String(t.date||'')) ? String(t.date) : '';
-  if(!asset || !date) return null;
-  return {
-    id: (typeof t.id === 'number' && isFinite(t.id)) ? t.id : Date.now() + Math.random(),
-    serial: Number(t.serial) || 0,
-    asset, date,
-    dir: t.dir === 'short' ? 'short' : 'long',
-    result: ['hit','miss','breakeven','pending'].includes(t.result) ? t.result : 'pending',
-    rr: t.rr == null ? '' : String(t.rr),
-    setup: t.setup ? String(t.setup) : '',
-    mistake: t.mistake ? String(t.mistake) : '',
-    emotion: t.emotion ? String(t.emotion) : '',
-    session: t.session ? String(t.session) : '',
-    lesson: t.lesson ? String(t.lesson) : '',
-    rulesFollowed: t.rulesFollowed === true ? true : (t.rulesFollowed === false ? false : null)
-  };
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const newId = ()=> Date.now()*1000 + Math.floor(Math.random()*1000);
+function cleanTrade(t){
+  if(!t || typeof t !== 'object' || typeof t.asset !== 'string' || !t.asset.trim() || !DATE_RE.test(t.date || '')) return null;
+  return {...t, asset:t.asset.trim().toUpperCase(), dir:t.dir==='short'?'short':'long',
+    result:['hit','miss','breakeven','pending'].includes(t.result)?t.result:'pending',
+    rr:t.rr==null?'':String(t.rr), id:Number(t.id)||newId(), serial:Number(t.serial)||0};
 }
-function dedupeIds(list){
-  const seen = new Set();
-  list.forEach(t=>{
-    while(seen.has(t.id)) t.id = Date.now() + Math.random();
-    seen.add(t.id);
-  });
-}
-function localDateStr(d){
-  d = d || new Date();
-  const p = n => String(n).padStart(2,'0');
-  return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate());
-}
-let trades = (function(){
-  const raw = safeParse(STORAGE_KEY, []);
-  const list = (Array.isArray(raw) ? raw : []).map(normalizeTrade).filter(Boolean);
-  dedupeIds(list);
-  list.forEach((t,i)=> t.serial = i+1);
-  return list;
-})();
+const loaded = safeLoad(STORAGE_KEY, []);
+let trades = (Array.isArray(loaded) ? loaded : []).map(cleanTrade).filter(Boolean);
+(function(){ let s = Math.max(0, ...trades.map(t=>t.serial)); trades.forEach(t=>{ if(!t.serial) t.serial = ++s; }); })();
 let editingId = null;
 
 const tbody = document.getElementById('tbody');
@@ -1035,19 +1067,14 @@ let rulesFollowedState = null;
 const MORE_OPEN_KEY = 'ledger_more_open';
 function setMoreOpen(open){
   moreFields.classList.toggle('hidden', !open);
-  try{ localStorage.setItem(MORE_OPEN_KEY, open ? '1' : '0'); }catch(e){}
+  localStorage.setItem(MORE_OPEN_KEY, open ? '1' : '0');
 }
-let _moreOpenSaved = null;
-try{ _moreOpenSaved = localStorage.getItem(MORE_OPEN_KEY); }catch(e){}
-setMoreOpen(_moreOpenSaved === '1');
+setMoreOpen(localStorage.getItem(MORE_OPEN_KEY) === '1');
 moreToggle.addEventListener('click', ()=>{
   setMoreOpen(moreFields.classList.contains('hidden'));
 });
 
-fabAdd.addEventListener('click', ()=>{
-  window.scrollTo({top:0, behavior:'smooth'});
-  fAsset.focus();
-});
+fabAdd.addEventListener('click', ()=> showForm());
 
 tagFilter.addEventListener('change', render);
 
@@ -1057,9 +1084,8 @@ lessonToggle.addEventListener('click', ()=> lessonFields.classList.toggle('hidde
 
 // ---- settings (account size, risk %, weekly target) ----
 const SETTINGS_KEY = 'ledger_settings_v1';
-let settings = safeParse(SETTINGS_KEY, {});
-if(!settings || typeof settings !== 'object' || Array.isArray(settings)) settings = {};
-function saveSettings(){ try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }catch(e){} }
+let settings = safeLoad(SETTINGS_KEY, {});
+function saveSettings(){ localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }
 
 const calcToggle = document.getElementById('calcToggle');
 const calcFields = document.getElementById('calcFields');
@@ -1121,7 +1147,7 @@ document.getElementById('btnHomeScreen').addEventListener('click', ()=>{
   } else {
     msg = 'Open this file in your phone\'s browser, then use its menu to "Add to Home Screen".';
   }
-  alert(msg);
+  showToast(msg, null, 7000);
 });
 
 // ---- backup reminder ----
@@ -1157,15 +1183,14 @@ rulesYesBtn.addEventListener('click', ()=>setRulesFollowed(rulesFollowedState===
 rulesNoBtn.addEventListener('click', ()=>setRulesFollowed(rulesFollowedState===false ? null : false));
 
 document.getElementById('dateNow').textContent = new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'});
-fDate.value = localDateStr();
+fDate.valueAsDate = new Date();
 
 function save(){
-  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(trades)); }
-  catch(e){ showToast('Could not save — storage full or blocked. Use Backup JSON now.', null, 5000); }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(trades));
 }
 
 function nextSerial(){
-  return trades.length ? trades[trades.length-1].serial + 1 : 1;
+  return Math.max(0, ...trades.map(t=>t.serial||0)) + 1;
 }
 
 function monthKey(dateStr){
@@ -1179,7 +1204,7 @@ function computeGroupStats(list){
   const nonPending = list.filter(t=>t.result!=='pending');
   const hits = list.filter(t=>t.result==='hit').length;
   const hitRate = winLoss.length ? Math.round((hits/winLoss.length)*100) + '%' : '—';
-  const rrVals = nonPending.map(t=>parseRR(t.rr)).filter(v=>v!==null);
+  const rrVals = nonPending.filter(t=>t.result==='hit').map(t=>parseRR(t.rr)).filter(v=>v!==null);
   const avgRR = rrVals.length ? '1:' + (rrVals.reduce((a,b)=>a+b,0)/rrVals.length).toFixed(1) : '—';
   return `${list.length} trades · ${hitRate} hit · ${avgRR} avg`;
 }
@@ -1187,9 +1212,6 @@ function computeGroupStats(list){
 function render(){
   if(editingId === null){
     fSerial.value = nextSerial();
-  } else {
-    const et = trades.find(tr=>tr.id === editingId);
-    if(et) fSerial.value = String(et.serial).padStart(3,'0');
   }
   tbody.innerHTML = '';
 
@@ -1199,10 +1221,9 @@ function render(){
   const sortMode = sortSelect.value;
   const filterVal = tagFilter.value;
 
-  let fromVal = dateFrom.value;
-  let toVal = dateTo.value;
-  if(fromVal && toVal && fromVal > toVal){ const tmp = fromVal; fromVal = toVal; toVal = tmp; }
-  let filtered = trades.filter(t => !query || t.asset.toUpperCase().includes(query));
+  const fromVal = dateFrom.value;
+  const toVal = dateTo.value;
+  let filtered = trades.filter(t => !query || t.asset.includes(query));
   if(fromVal) filtered = filtered.filter(t => t.date >= fromVal);
   if(toVal) filtered = filtered.filter(t => t.date <= toVal);
   if(filterVal){
@@ -1219,18 +1240,18 @@ function render(){
   updateStreakBanner();
 
   if(trades.length === 0){
-    emptyMsg.textContent = 'No entries yet — log your first trade above.';
     emptyMsg.style.display = 'block';
     updateStats();
     return;
   }
   if(filtered.length === 0){
-    emptyMsg.textContent = 'No trades match your filters.';
     emptyMsg.style.display = 'block';
+    emptyMsg.textContent = 'No trades match your search.';
     updateStats();
     return;
   }
   emptyMsg.style.display = 'none';
+  emptyMsg.textContent = 'No entries yet — log your first trade above.';
 
   // sort within groups
   let sorted = [...filtered];
@@ -1289,7 +1310,7 @@ function rowEl(t){
     <td>${escapeHtml(t.asset)}${metaLine(t)}</td>
     <td class="num">${formatDate(t.date)}</td>
     <td><span class="tag ${t.dir}">${t.dir}</span></td>
-    <td><span class="tag ${t.result} result-tag" data-id="${t.id}" title="Tap to update" role="button" tabindex="0" aria-label="Trade result: ${t.result}. Tap to cycle.">${symbolFor(t.result)} ${t.result}</span></td>
+    <td><span class="tag ${t.result} result-tag" data-id="${t.id}" title="Tap to update" role="button" tabindex="0" aria-label="Trade result: ${t.result}. Tap to cycle.">${symbolFor(t.result)} ${t.result==='breakeven'?'BE':t.result}</span>${t.result==='pending'?`<span class="qc"><button class="qc-btn" data-id="${t.id}" data-r="hit">Hit</button><button class="qc-btn" data-id="${t.id}" data-r="miss">Miss</button></span>`:''}</td>
     <td class="rr rr-edit" data-id="${t.id}" title="Tap to set R:R" role="button" tabindex="0" aria-label="Risk to reward ${t.rr ? escapeHtml(t.rr) : 'not set'}. Tap to edit.">${t.rr ? escapeHtml(t.rr) : '—'}</td>
     <td>
       <div class="row-actions">
@@ -1358,6 +1379,7 @@ function updateStats(){
   const total = trades.length;
   document.getElementById('statTotal').textContent = total;
   updateTargetBar();
+  updateRStats();
   updateExposureBanner();
   checkBackupReminder();
   if(total === 0){
@@ -1375,7 +1397,7 @@ function updateStats(){
     : '—';
   updateHitRateTrend();
 
-  const rrVals = nonPending.map(t=>parseRR(t.rr)).filter(v=>v!==null);
+  const rrVals = nonPending.filter(t=>t.result==='hit').map(t=>parseRR(t.rr)).filter(v=>v!==null);
   if(rrVals.length){
     const avg = rrVals.reduce((a,b)=>a+b,0)/rrVals.length;
     document.getElementById('statAvgRR').textContent = '1:' + avg.toFixed(1);
@@ -1430,7 +1452,9 @@ function updateTargetBar(){
   });
   let cum = 0;
   thisWeek.forEach(t=>{
-    cum += tradeR(t);
+    const rrVal = parseRR(t.rr);
+    if(t.result==='hit') cum += (rrVal !== null ? rrVal : 1);
+    else if(t.result==='miss') cum -= 1;
   });
   const pct = Math.max(0, Math.min(100, (cum/target)*100));
   el.innerHTML = `
@@ -1524,7 +1548,7 @@ function computeReportData(periodFilter, customFrom, customTo, tagFilterVal){
   const nonPending = list.filter(t=>t.result!=='pending');
   const hits = list.filter(t=>t.result==='hit').length;
   const hitRate = winLoss.length ? Math.round((hits/winLoss.length)*100) : null;
-  const rrVals = nonPending.map(t=>parseRR(t.rr)).filter(v=>v!==null);
+  const rrVals = nonPending.filter(t=>t.result==='hit').map(t=>parseRR(t.rr)).filter(v=>v!==null);
   const avgRR = rrVals.length ? (rrVals.reduce((a,b)=>a+b,0)/rrVals.length) : null;
 
   // longest hit streak (chronological, hit/miss only)
@@ -1693,7 +1717,7 @@ function renderReport(){
   <div class="r-grid">
     <div class="r-card"><div class="rn">${d.total}</div><div class="rl">Trades</div></div>
     <div class="r-card"><div class="rn">${d.hitRate !== null ? d.hitRate + '%' : '—'}</div><div class="rl">Hit Rate</div></div>
-    <div class="r-card"><div class="rn">${d.avgRR !== null ? '1:' + d.avgRR.toFixed(1) : '—'}</div><div class="rl">Avg R:R</div></div>
+    <div class="r-card"><div class="rn">${d.avgRR !== null ? '1:' + d.avgRR.toFixed(1) : '—'}</div><div class="rl">Avg Win R:R</div></div>
     <div class="r-card"><div class="rn">${d.longestStreak}</div><div class="rl">Longest Streak</div></div>
     <div class="r-card"><div class="rn">${d.rulePct !== null ? d.rulePct + '%' : '—'}</div><div class="rl">Rule Adherence</div></div>
     <div class="r-card"><div class="rn">${d.currentStreak || 0}</div><div class="rl">Current ${d.streakType === 'hit' ? 'Win' : d.streakType === 'miss' ? 'Loss' : ''} Streak</div></div>
@@ -1708,7 +1732,7 @@ function renderReport(){
     const minY = Math.min(0, ...values);
     const maxY = Math.max(0, ...values);
     const rangeY = (maxY-minY) || 1;
-    const w=560,h=90,pad=4;
+    const w=560,h=120,pad=18;
     const coords = d.equity.map((p,i)=>{
       const x = pad + (i/(d.equity.length-1))*(w-2*pad);
       const y = h-pad - ((p.cum-minY)/rangeY)*(h-2*pad);
@@ -1722,10 +1746,11 @@ function renderReport(){
     const zeroY = h-pad - ((0-minY)/rangeY)*(h-2*pad);
     html += `<div class="r-section">
       <div class="r-section-title">Equity curve (cumulative R)</div>
-      <svg class="r-equity" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+      <svg class="r-equity" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">
         <line class="r-equity-zero" x1="0" y1="${zeroY}" x2="${w}" y2="${zeroY}"/>
         <polyline class="r-equity-line" points="${pts}"/>
         ${dots}
+        <text x="${w-4}" y="14" text-anchor="end" font-size="16" style="fill:var(--dim)">${values[values.length-1].toFixed(1)}R</text>
       </svg>
     </div>`;
   }
@@ -1823,7 +1848,7 @@ function renderReport(){
       const short = m.key.split(' ')[0].slice(0,3);
       html += `<div class="r-month-col">
         <div class="r-month-bar" style="height:${h}px;"></div>
-        <div class="r-month-lbl">${short}</div>
+        <div class="r-month-lbl">${m.rate}%<br>${short}</div>
       </div>`;
     });
     html += `</div></div>`;
@@ -1850,6 +1875,54 @@ function renderReport(){
   body.innerHTML = html;
 }
 
+const isMobile = ()=> window.matchMedia('(max-width:640px)').matches;
+function openForm(){
+  document.getElementById('sheetTitle').textContent = editingId !== null ? 'Edit trade' : 'Log trade';
+  document.body.classList.add('form-open');
+}
+function closeForm(){
+  if(editingId !== null) document.getElementById('btnCancelEdit').click();
+  document.body.classList.remove('form-open');
+}
+function showForm(el){
+  if(isMobile()) openForm(); else window.scrollTo({top:0, behavior:'smooth'});
+  (el || fAsset).focus();
+}
+function uiSheet(msg, opts, input){
+  return new Promise(res=>{
+    const o = document.createElement('div');
+    o.className = 'dlg';
+    o.innerHTML = `<div class="dlg-box" role="dialog" aria-modal="true"><p></p>${input !== undefined ? '<input type="text">' : ''}<div class="dlg-btns"></div></div>`;
+    o.querySelector('p').textContent = msg;
+    const inp = o.querySelector('input'), bx = o.querySelector('.dlg-btns');
+    if(inp) inp.value = input;
+    const done = v=>{ o.remove(); res(v); };
+    opts.forEach(([label, val, cls])=>{
+      const b = document.createElement('button');
+      b.type = 'button'; b.textContent = label; if(cls) b.className = cls;
+      b.onclick = ()=> done(inp && val === true ? inp.value : val);
+      bx.appendChild(b);
+    });
+    o.onclick = e=>{ if(e.target === o) done(null); };
+    o.onkeydown = e=>{ if(e.key === 'Escape') done(null); if(e.key === 'Enter' && inp) done(inp.value); };
+    document.body.appendChild(o);
+    (inp || bx.lastChild).focus();
+  });
+}
+const uiConfirm = (m, ok, no)=> uiSheet(m, [[no || 'Cancel', false], [ok || 'OK', true, 'primary']]);
+function updateRStats(){
+  const done = trades.filter(t=>t.result !== 'pending');
+  const nEl = document.getElementById('statNetR'), xEl = document.getElementById('statExp');
+  const col = v=> v > 0 ? 'var(--hit)' : (v < 0 ? 'var(--miss)' : '');
+  const fmt = (v,d)=> (v > 0 ? '+' : '') + v.toFixed(d) + 'R';
+  if(!done.length){ nEl.textContent = xEl.textContent = '—'; nEl.style.color = xEl.style.color = ''; }
+  else {
+    const net = done.reduce((a,t)=>a + tradeR(t), 0), ex = net / done.length;
+    nEl.textContent = fmt(net,1); nEl.style.color = col(net);
+    xEl.textContent = fmt(ex,2); xEl.style.color = col(ex);
+  }
+  document.getElementById('assetList').innerHTML = [...new Set(trades.map(t=>t.asset))].sort().map(a=>`<option value="${escapeHtml(a)}">`).join('');
+}
 function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
@@ -1862,8 +1935,6 @@ function formatDate(d){
 
 document.getElementById('tradeForm').addEventListener('submit', function(e){
   e.preventDefault();
-  if(!fAsset.value.trim()){ showToast('Enter an asset', null, 1800); fAsset.focus(); return; }
-  if(!fDate.value){ showToast('Pick a date', null, 1800); fDate.focus(); return; }
   const data = {
     asset: fAsset.value.trim().toUpperCase(),
     date: fDate.value,
@@ -1881,16 +1952,16 @@ document.getElementById('tradeForm').addEventListener('submit', function(e){
   if(editingId !== null){
     const t = trades.find(tr=>tr.id === editingId);
     if(t) Object.assign(t, data);
-    else { trades.push({ id: Date.now() + Math.random(), serial: nextSerial(), ...data }); }
     exitEditMode();
   } else {
-    trades.push({ id: Date.now() + Math.random(), serial: nextSerial(), ...data });
+    trades.push({ id: newId(), serial: nextSerial(), ...data });
   }
   save();
   showToast(wasEditing ? 'Trade updated' : 'Trade added', null, 1800);
+  if(data.session) localStorage.setItem('ledger_last_session', data.session);
   fAsset.value = '';
   fRR.value = '';
-  fDate.value = localDateStr();
+  fDate.valueAsDate = new Date();
   fDir.value = 'long';
   fResult.value = 'pending';
   fSetup.value = '';
@@ -1903,13 +1974,14 @@ document.getElementById('tradeForm').addEventListener('submit', function(e){
   fSession.value = '';
   fLesson.value = '';
   setRulesFollowed(null);
-  fAsset.focus();
+  fSession.value = localStorage.getItem('ledger_last_session') || '';
+  if(isMobile()) closeForm(); else fAsset.focus();
   render();
 });
 
-function enterEditMode(id){
+async function enterEditMode(id){
   if(editingId !== null && editingId !== id){
-    if(!confirm('You have an unsaved edit in progress. Discard it and edit this trade instead?')) return;
+    if(!(await uiConfirm('Discard your unsaved edit and edit this trade instead?','Discard','Keep editing'))) return;
   }
   const t = trades.find(tr=>tr.id === id);
   if(!t) return;
@@ -1952,8 +2024,7 @@ function enterEditMode(id){
   fSerial.value = String(t.serial).padStart(3,'0');
   document.getElementById('submitBtn').textContent = '✓ Update';
   document.getElementById('editBar').style.display = 'block';
-  window.scrollTo({top:0, behavior:'smooth'});
-  fAsset.focus();
+  showForm();
 }
 
 function exitEditMode(){
@@ -1966,7 +2037,7 @@ document.getElementById('btnCancelEdit').addEventListener('click', ()=>{
   exitEditMode();
   fAsset.value = '';
   fRR.value = '';
-  fDate.value = localDateStr();
+  fDate.valueAsDate = new Date();
   fDir.value = 'long';
   fResult.value = 'pending';
   fSetup.value = '';
@@ -1983,27 +2054,23 @@ document.getElementById('btnCancelEdit').addEventListener('click', ()=>{
 });
 
 tbody.addEventListener('click', function(e){
-  const btn = e.target.closest('button, .result-tag, .rr-edit');
-  if(!btn) return;
-  e = { target: btn };
+  if(e.target.classList.contains('qc-btn')){
+    const t = trades.find(tr=>tr.id === Number(e.target.dataset.id));
+    if(t){ t.result = e.target.dataset.r; save(); render(); }
+    return;
+  }
   if(e.target.classList.contains('dup')){
     const id = Number(e.target.dataset.id);
     const t = trades.find(tr=>tr.id === id);
     if(t){
-      if(editingId !== null) exitEditMode();
-      fMistake.value = ''; fMistakeOther.value = ''; fMistakeOther.style.display = 'none';
-      fEmotion.value = ''; fEmotionOther.value = ''; fEmotionOther.style.display = 'none';
-      fLesson.value = ''; setRulesFollowed(null);
-      fSerial.value = nextSerial();
       fAsset.value = t.asset;
       fDir.value = t.dir;
       fRR.value = t.rr || '';
       fSetup.value = t.setup || '';
       fSession.value = t.session || '';
-      fDate.value = localDateStr();
+      fDate.valueAsDate = new Date();
       fResult.value = 'pending';
-      window.scrollTo({top:0, behavior:'smooth'});
-      fDate.focus();
+      showForm(fDate);
     }
     return;
   }
@@ -2018,8 +2085,6 @@ tbody.addEventListener('click', function(e){
     if(idx === -1) return;
     const deleted = trades[idx];
     trades = trades.filter(t=>t.id !== id);
-    trades.forEach((t,i)=>t.serial = i+1);
-    if(editingId !== null && !trades.some(t=>t.id === editingId)) exitEditMode();
     save();
     render();
     showUndoToast(deleted, idx);
@@ -2028,22 +2093,14 @@ tbody.addEventListener('click', function(e){
     const id = Number(e.target.dataset.id);
     const t = trades.find(tr=>tr.id === id);
     if(t){
-      const cycle = {pending:'hit', hit:'miss', miss:'breakeven', breakeven:'pending'};
-      t.result = cycle[t.result];
-      save();
-      render();
+      uiSheet('Set result', [['Hit','hit','c-hit'],['Miss','miss','c-miss'],['BE','breakeven'],['Pending','pending']]).then(v=>{ if(v){ t.result = v; save(); render(); } });
     }
   }
   if(e.target.classList.contains('rr-edit')){
     const id = Number(e.target.dataset.id);
     const t = trades.find(tr=>tr.id === id);
     if(t){
-      const val = prompt('Set risk:reward (e.g. 1:2)', t.rr || '');
-      if(val !== null){
-        t.rr = formatRRInput(val);
-        save();
-        render();
-      }
+      uiSheet('Risk:reward (e.g. 1:2)', [['Cancel',null],['Save',true,'primary']], t.rr || '').then(val=>{ if(val !== null){ t.rr = formatRRInput(val); save(); render(); } });
     }
   }
 });
@@ -2055,8 +2112,8 @@ tbody.addEventListener('keydown', function(e){
   }
 });
 
-document.getElementById('btnPrint').addEventListener('click', ()=>{
-  const includeReport = confirm('Include the report summary along with your trade data?\n\nOK = Include report\nCancel = Data only');
+document.getElementById('btnPrint').addEventListener('click', async ()=>{
+  const includeReport = await uiConfirm('Include the report summary with your trade data?','Include report','Data only');
   document.body.classList.add('pr-data');
   if(includeReport){
     renderReport();
@@ -2085,8 +2142,8 @@ document.getElementById('reportFrom').addEventListener('change', renderReport);
 document.getElementById('reportTo').addEventListener('change', renderReport);
 document.getElementById('reportTagFilter').addEventListener('change', renderReport);
 
-document.getElementById('btnPrintReport').addEventListener('click', ()=>{
-  const includeData = confirm('Include your full trade log table with this report?\n\nOK = Include data\nCancel = Report only');
+document.getElementById('btnPrintReport').addEventListener('click', async ()=>{
+  const includeData = await uiConfirm('Include your full trade log table with this report?','Include table','Report only');
   document.body.classList.add('pr-report');
   if(includeData) document.body.classList.add('pr-data');
   window.print();
@@ -2110,29 +2167,26 @@ function showToast(message, onUndo, duration){
       clearTimeout(toastTimer);
     };
   }
-  toastTimer = setTimeout(()=>{ toast.style.display = 'none'; }, duration || 3000);
+  toastTimer = setTimeout(()=>{ toast.style.display = 'none'; }, duration || 6000);
 }
 
 function showUndoToast(deletedTrade, deletedIndex){
   showToast('Trade deleted', ()=>{
     trades.splice(deletedIndex, 0, deletedTrade);
-    trades.forEach((t,i)=>t.serial = i+1);
     save();
     render();
   });
 }
 
-document.getElementById('btnClear').addEventListener('click', ()=>{
+document.getElementById('btnClear').addEventListener('click', async ()=>{
   if(trades.length === 0) return;
-  if(confirm(`Clear all ${trades.length} logged trades? You'll get a brief chance to undo.`)){
+  if(await uiConfirm(`Clear all ${trades.length} logged trades? You can undo for a few seconds.`,'Clear all','Cancel')){
     const cleared = trades;
     trades = [];
-    if(editingId !== null) exitEditMode();
     save();
     render();
     showToast(`${cleared.length} trades cleared`, ()=>{
-      trades = cleared.concat(trades);
-      trades.forEach((t,i)=>t.serial = i+1);
+      trades = cleared;
       save();
       render();
     }, 6000);
@@ -2150,14 +2204,13 @@ document.getElementById('btnCSV').addEventListener('click', ()=>{
     const rf = t.rulesFollowed === true ? 'Yes' : (t.rulesFollowed === false ? 'No' : '');
     csv += [t.serial,t.asset,t.date,t.dir,t.result,t.rr,t.setup||'',t.session||'',rf,t.mistake||'',t.emotion||'',t.lesson||''].map(csvField).join(',') + '\n';
   });
-  const blob = new Blob(['\uFEFF' + csv], {type:'text/csv;charset=utf-8'});
+  const blob = new Blob([csv], {type:'text/csv'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `trade-log-${localDateStr()}.csv`;
-  document.body.appendChild(a);
+  a.download = `trade-log-${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
-  setTimeout(()=>{ a.remove(); URL.revokeObjectURL(url); }, 1000);
+  URL.revokeObjectURL(url);
 });
 
 searchBox.addEventListener('input', render);
@@ -2165,20 +2218,23 @@ dateFrom.addEventListener('change', render);
 dateTo.addEventListener('change', render);
 sortSelect.addEventListener('change', render);
 
-document.getElementById('btnJSONExport').addEventListener('click', ()=>{
+document.getElementById('btnJSONExport').addEventListener('click', async ()=>{
   if(trades.length === 0) return;
-  const blob = new Blob([JSON.stringify(trades, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `trade-log-backup-${localDateStr()}.json`;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(()=>{ a.remove(); URL.revokeObjectURL(url); }, 1000);
+  const name = `trade-log-backup-${new Date().toISOString().slice(0,10)}.json`;
+  const json = JSON.stringify(trades, null, 2);
+  let shared = false;
   try{
-    localStorage.setItem(BACKUP_KEY, String(Date.now()));
-    localStorage.setItem(BACKUP_COUNT_KEY, String(trades.length));
-  }catch(e){}
+    const file = new File([json], name, {type:'application/json'});
+    if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:name}); shared = true; }
+  }catch(err){ if(err && err.name === 'AbortError') return; }
+  if(!shared){
+    const url = URL.createObjectURL(new Blob([json], {type:'application/json'}));
+    const a = document.createElement('a');
+    a.href = url; a.download = name; a.click();
+    URL.revokeObjectURL(url);
+  }
+  localStorage.setItem(BACKUP_KEY, String(Date.now()));
+  localStorage.setItem(BACKUP_COUNT_KEY, String(trades.length));
   checkBackupReminder();
 });
 
@@ -2189,28 +2245,30 @@ fileImport.addEventListener('change', function(e){
   const file = e.target.files[0];
   if(!file) return;
   const reader = new FileReader();
-  reader.onload = function(evt){
+  reader.onload = async function(evt){
     try{
-      const parsed = JSON.parse(evt.target.result);
-      if(!Array.isArray(parsed)) throw new Error('Invalid format');
-      const imported = parsed.map(normalizeTrade).filter(Boolean);
+      const raw = JSON.parse(evt.target.result);
+      if(!Array.isArray(raw)) throw new Error('Invalid format');
+      const imported = raw.map(cleanTrade).filter(Boolean);
       if(!imported.length) throw new Error('No valid trades');
-      const mode = confirm('Click OK to MERGE with existing trades, or Cancel to REPLACE all existing trades with this backup.');
-      if(mode){
-        // merge: avoid id collisions
-        trades = trades.concat(imported);
-      } else {
-        trades = imported;
-      }
-      dedupeIds(trades);
-      if(editingId !== null && !trades.some(t=>t.id === editingId)) exitEditMode();
-      // renumber serials by current array order
+      const skipped = raw.length - imported.length;
+      const mode = await uiSheet(`Found ${imported.length} valid trades. Merge with your existing trades, or replace them?`, [['Cancel',null],['Replace','replace'],['Merge','merge','primary']]);
+      if(!mode){ fileImport.value = ''; return; }
+      let added = imported.length;
+      if(mode === 'merge'){
+        const sig = t=>[t.asset,t.date,t.dir,t.result,t.rr,t.setup||''].join('|');
+        const seen = new Set(trades.map(sig)), ids = new Set(trades.map(t=>t.id));
+        const fresh = imported.filter(t=>!seen.has(sig(t)));
+        fresh.forEach(t=>{ if(ids.has(t.id)) t.id = newId(); });
+        added = fresh.length;
+        trades = trades.concat(fresh);
+      } else { trades = imported; }
       trades.forEach((t,i)=>t.serial = i+1);
       save();
       render();
-      alert(`Imported ${imported.length} trades` + (parsed.length !== imported.length ? ` (${parsed.length - imported.length} invalid skipped).` : '.'));
+      showToast(`Imported ${added} trades` + (skipped ? ` (${skipped} invalid skipped)` : '') + '.', null, 4000);
     } catch(err){
-      alert('Could not read this file — make sure it\'s a valid backup JSON.');
+      showToast('Could not read this file — use a valid backup JSON.', null, 5000);
     }
     fileImport.value = '';
   };
@@ -2239,10 +2297,10 @@ const THEME_KEY = 'ledger_theme';
 function applyTheme(theme){
   document.documentElement.setAttribute('data-theme', theme);
   document.getElementById('themeToggle').textContent = theme === 'light' ? '☀' : '☾';
-  try{ localStorage.setItem(THEME_KEY, theme); }catch(e){}
+  const tc = document.querySelector('meta[name=theme-color]'); if(tc) tc.content = theme === 'light' ? '#f5f4f0' : '#14161b';
+  localStorage.setItem(THEME_KEY, theme);
 }
-let savedTheme = null;
-try{ savedTheme = localStorage.getItem(THEME_KEY); }catch(e){}
+const savedTheme = localStorage.getItem(THEME_KEY);
 const systemPrefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
 applyTheme(savedTheme || (systemPrefersLight ? 'light' : 'dark'));
 document.getElementById('themeToggle').addEventListener('click', ()=>{
@@ -2250,6 +2308,10 @@ document.getElementById('themeToggle').addEventListener('click', ()=>{
   applyTheme(current === 'dark' ? 'light' : 'dark');
 });
 
+if(navigator.storage && navigator.storage.persist) navigator.storage.persist();
+document.getElementById('sheetClose').addEventListener('click', closeForm);
+document.getElementById('sheetBackdrop').addEventListener('click', closeForm);
+fSession.value = localStorage.getItem('ledger_last_session') || '';
 render();
 </script>
 </body>
